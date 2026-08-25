@@ -16,6 +16,7 @@ import {
   type WelcomePayload,
   type WorldSnapshot,
   type WorldTimeState,
+  tileProps,
 } from '@survive/protocol';
 import { createGameData, type GameData } from '@survive/game-data';
 import {
@@ -99,7 +100,7 @@ export interface SessionListeners {
  * a mispredicted step against an unknown wall is corrected by the next snapshot, and
  * the alternative - not predicting at all - feels far worse.
  */
-class PredictionWorld {
+export class PredictionWorld {
   constructor(
     private readonly store: SnapshotStore,
     private readonly data: GameData,
@@ -110,7 +111,7 @@ class PredictionWorld {
     // Unknown terrain is treated as open: better to walk into it and be corrected than
     // to be invisibly stuck at a chunk boundary.
     if (tile === undefined) return false;
-    if (isSolidTileId(tile)) return true;
+    if (tileProps(tile).solid) return true;
     return this.structureSolidAt(tileX, tileY);
   }
 
@@ -137,7 +138,7 @@ class PredictionWorld {
 
   speedAt(x: number, y: number): number {
     const tile = this.store.tileAt(Math.floor(x / 32), Math.floor(y / 32));
-    return tile === undefined ? 1 : tileSpeed(tile);
+    return tile === undefined ? 1 : tileProps(tile).speed;
   }
 
   private circleBlocked(x: number, y: number, radius: number): boolean {
@@ -176,43 +177,50 @@ class PredictionWorld {
   }
 }
 
-/** Tile ids the client treats as solid. Mirrors `TILE_PROPS` without importing it all. */
-function isSolidTileId(tile: number): boolean {
-  return tile === 0 || tile >= 30;
-}
-
-function tileSpeed(tile: number): number {
-  switch (tile) {
-    case 8:
-      return 0.55;
-    case 9:
-      return 0.35;
-    case 4:
-      return 0.7;
-    case 2:
-      return 0.85;
-    case 5:
-      return 0.88;
-    case 10:
-      return 1.12;
-    case 12:
-      return 1.08;
-    case 11:
-      return 1.06;
-    case 18:
-      return 0.82;
-    case 21:
-      return 0.7;
-    default:
-      return 1;
-  }
-}
+/**
+ * Time constant for easing the drawn position toward the prediction, in milliseconds.
+ *
+ * Short enough that the lag (about tau x speed, ~5 px at walking pace) is imperceptible,
+ * long enough to absorb a whole simulation step. Matches the camera's own easing so the two
+ * cannot visibly disagree.
+ */
+const RENDER_EASE_MS = 45;
 
 export class GameSession {
   readonly store = new SnapshotStore();
   readonly clock = new ClientClock();
   readonly interpolator = new EntityInterpolator();
   readonly predictor = new InputPredictor();
+  /**
+   * Predicted position as it stood before the most recent fixed step.
+   *
+   * Rendering reads {@link renderPosition}, which slides between this and the current
+   * prediction. Drawing the raw prediction instead means the sprite only moves 20 times a
+   * second while the display refreshes at 60 or 120 - it holds still for several frames and
+   * then jumps a whole tick's distance. Against a camera that eases smoothly, that reads as
+   * the character shuddering back and forth in the direction it is walking.
+   */
+  private renderX = 0;
+  private renderY = 0;
+  /**
+   * The predicted position one simulation step back.
+   *
+   * Rendering interpolates between this and the current rung by the leftover accumulator,
+   * which is what makes the drawn speed constant instead of pulsing once per tick.
+   */
+  private prevPredX = 0;
+  private prevPredY = 0;
+
+  /** What the last reconciliation did. Read by the debug hook; see `net()`. */
+  lastReconcileInfo: {
+    error: number;
+    ackSeq: number;
+    newestSeq: number;
+    pending: number;
+    replayed: number;
+    corrected: boolean;
+    hardSnapped: boolean;
+  } | null = null;
   readonly data: GameData;
 
   private connection: ServerConnection | null = null;
@@ -392,14 +400,34 @@ export class GameSession {
       // The first snapshot is a teleport, not a correction: adopt it wholesale so the
       // camera does not fly across the map from (0, 0).
       this.predictor.setPredicted({ x: self.x, y: self.y, vx: self.vx, vy: self.vy });
+      this.renderX = self.x;
+      this.renderY = self.y;
+      this.prevPredX = self.x;
+      this.prevPredY = self.y;
       this.predictedFacing = self.facing;
       this.hasSpawned = true;
     } else {
-      this.predictor.reconcile(
+      const result = this.predictor.reconcile(
         { x: self.x, y: self.y, vx: self.vx, vy: self.vy },
         snapshot.ackSeq,
         (state, frame) => this.applyPredictedFrame(state, frame),
       );
+      this.lastReconcileInfo = {
+        error: result.error,
+        ackSeq: snapshot.ackSeq,
+        newestSeq: this.predictor.newestSeq,
+        pending: this.predictor.pendingFrames().length,
+        replayed: result.replayed,
+        corrected: result.corrected,
+        hardSnapped: result.hardSnapped,
+      };
+      // A snap is a teleport, not a correction to be smoothed over.
+      if (result.hardSnapped) {
+        this.renderX = this.predictor.predicted.x;
+        this.renderY = this.predictor.predicted.y;
+        this.prevPredX = this.predictor.predicted.x;
+        this.prevPredY = this.predictor.predicted.y;
+      }
     }
     this.listeners.onSnapshot?.(snapshot);
   }
@@ -454,6 +482,18 @@ export class GameSession {
     }
     if (steps >= 5) this.accumulatorMs = 0;
 
+    // Interpolate across the step in progress, using whatever real time is left over in
+    // the accumulator. At a constant velocity the target then advances at exactly that
+    // velocity, so there is no per-tick ripple left for the ease to smooth.
+    const predicted = this.predictor.predicted;
+    const alpha = Math.min(1, Math.max(0, this.accumulatorMs / (SIM_DT * 1000)));
+    const targetX = this.prevPredX + (predicted.x - this.prevPredX) * alpha;
+    const targetY = this.prevPredY + (predicted.y - this.prevPredY) * alpha;
+    // Once per frame, from this frame's delta, so the ease is framerate independent.
+    const k = 1 - Math.exp(-deltaMs / RENDER_EASE_MS);
+    this.renderX += (targetX - this.renderX) * k;
+    this.renderY += (targetY - this.renderY) * k;
+
     if (steps > 0 && this.connection) {
       // Resend every unacknowledged frame, not just the new ones: a dropped packet
       // would otherwise cost the server a movement step it can never recover.
@@ -468,6 +508,10 @@ export class GameSession {
   }
 
   private stepPrediction(): void {
+    // Captured before the step, so rendering has both ends of the segment to slide along.
+    this.prevPredX = this.predictor.predicted.x;
+    this.prevPredY = this.predictor.predicted.y;
+
     let buttons = 0;
     if (this.intent.primary) buttons |= Button.Primary;
     if (this.intent.secondary) buttons |= Button.Secondary;
@@ -491,6 +535,32 @@ export class GameSession {
     // does not repeat for as long as the key is held.
     this.intent.interact = false;
     this.intent.reload = false;
+  }
+
+  /**
+   * Where to draw the local player this frame.
+   *
+   * Eased toward the prediction rather than snapped to it. The simulation is a fixed 20 Hz
+   * ladder and the display is not, so drawing the rung directly freezes the sprite for most
+   * frames and then jumps it a whole tick - and against a camera that eases smoothly (see
+   * `GameScene.updateCamera`, which does exactly this) the character appears to shudder
+   * backwards inside its own direction of travel.
+   *
+   * Both an accumulator fraction and an ease, because each fixes what the other cannot.
+   *
+   * The fraction slides along the step in progress, which is what makes the speed constant:
+   * a plain low-pass filter fed a staircase closes most of each step early and coasts at the
+   * end, so the drawn speed pulsed between 0.037 and 0.225 px/ms once per tick - a six-fold
+   * swing, twenty times a second - even though the underlying motion was perfectly even.
+   *
+   * The ease then covers what the fraction gets wrong. A frame that runs two simulation
+   * steps only has the last one to interpolate across, and a reconciliation correction moves
+   * the far end of the segment mid-slide; both are discontinuities, and easing turns them
+   * into a glide instead of a jump. The residual lag is about tau x speed, under two pixels
+   * at walking pace.
+   */
+  get renderPosition(): { x: number; y: number } {
+    return { x: this.renderX, y: this.renderY };
   }
 
   /** Send a discrete command. */

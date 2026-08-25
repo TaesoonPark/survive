@@ -289,3 +289,31 @@ re-nests it and then calls `client.consumeSeatReservation`, which the WebSocket
 protocol accepts unchanged. Do not "fix" this by downgrading the server:
 `@colyseus/core@0.16.x` is published with unresolvable `workspace:^` dependency
 ranges and cannot be installed from npm.
+
+## Gameplay specs share one server, one world and one player
+
+Every file under `tests/gameplay/` runs against the same live server and the same save,
+in Playwright's file order. By the time `movement.spec.ts` runs, earlier specs have built
+structures and walked the player somewhere - twice now a movement test graded a sprite
+pinned against a wall and reported it as perfectly smooth, and once it reported 42
+"backwards" frames that were the server correctly correcting a genuine misprediction.
+
+If a test depends on the player being able to move, probe for an open direction first and
+assert that it actually travelled, so a blocked player fails loudly on its own premise
+instead of quietly passing the real assertions.
+
+## Grade on a ratio, not on a rate
+
+A threshold in px-per-frame or px-per-millisecond inherits the browser's refresh rate and
+the machine's load, and a bound tight enough to catch the bug will sit a few percent from
+the passing value. Three versions of the render-smoothness test failed this way. The
+frozen-frame _fraction_ fixed it: drawing a 20 Hz simulation at display rate leaves five
+frames in six motionless whatever the refresh rate is, and interpolating leaves none.
+
+## Assert on the running object, not on the config literal
+
+`pixelArt: true` expands inside Phaser to `antialias = false` **and**
+`roundPixels = true`, overwriting whatever `roundPixels` the config asked for. A test
+against the literal would have passed while the game rounded every draw; reading
+`game.config.roundPixels` off the live instance is what caught it. Whenever a library
+normalises or derives its own settings, assert what it ended up with.

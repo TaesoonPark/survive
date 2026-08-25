@@ -56,7 +56,21 @@ export interface SimulationOptions {
 /** Per-player buffer of unconsumed input frames. */
 interface PlayerInputBuffer {
   frames: InputFrame[];
-  lastSeq: number;
+  /**
+   * Highest sequence number ever *accepted* into this buffer - not the last one consumed.
+   *
+   * The distinction is the whole point. The client resends every frame the server has not
+   * acknowledged yet, deliberately, so that a dropped packet does not cost a movement step.
+   * Acknowledgements ride on snapshots at 10 Hz while frames are produced at 20 Hz, so the
+   * same frame is legitimately sent several times before its ack comes back.
+   *
+   * Guarding against the last *consumed* seq therefore let every still-queued frame in
+   * again on each resend: the queue filled with duplicates of the same input, the server
+   * applied each copy as a separate step, and it ended up executing intent from seconds
+   * ago - the player creeping along, then continuing to walk for a second after the key was
+   * released, while `MAX_PENDING_INPUTS` (120 frames, six seconds) set the ceiling.
+   */
+  highestSeq: number;
 }
 
 class InputTracker implements CurrentInputs {
@@ -294,11 +308,14 @@ export class Simulation {
   pushInput(playerId: PlayerId, frames: readonly InputFrame[]): void {
     let buffer = this.inputBuffers.get(playerId);
     if (!buffer) {
-      buffer = { frames: [], lastSeq: -1 };
+      buffer = { frames: [], highestSeq: -1 };
       this.inputBuffers.set(playerId, buffer);
     }
     for (const frame of frames) {
-      if (frame.seq <= buffer.lastSeq) continue;
+      // Monotonic: a resend of anything already seen is dropped, while a genuine gap after
+      // packet loss is still accepted.
+      if (frame.seq <= buffer.highestSeq) continue;
+      buffer.highestSeq = frame.seq;
       buffer.frames.push(frame);
     }
     buffer.frames.sort((a, b) => a.seq - b.seq);
@@ -316,9 +333,10 @@ export class Simulation {
   takeInput(playerId: PlayerId): InputFrame | undefined {
     const buffer = this.inputBuffers.get(playerId);
     if (!buffer || buffer.frames.length === 0) return undefined;
-    const frame = buffer.frames.shift();
-    if (frame) buffer.lastSeq = frame.seq;
-    return frame;
+    // `highestSeq` is deliberately not touched here: it records what has been *accepted*,
+    // and lowering it to the frame just consumed would let every queued frame back in on
+    // the next resend.
+    return buffer.frames.shift();
   }
 
   pendingInputCount(playerId: PlayerId): number {
@@ -342,7 +360,7 @@ export class Simulation {
   /** Install a player (fresh or loaded from disk) into the world. */
   addPlayer(player: PlayerState): PlayerState {
     this.state.players[player.id] = player;
-    this.inputBuffers.set(player.id, { frames: [], lastSeq: -1 });
+    this.inputBuffers.set(player.id, { frames: [], highestSeq: -1 });
     for (const system of this.systems) system.onPlayerJoin?.(this.ctx, player);
     this.events.emit({ type: 'playerJoined', playerId: player.id, name: player.name });
     return player;

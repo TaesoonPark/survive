@@ -107,6 +107,11 @@ export class InputPredictor {
 
   private readonly state: PredictedState;
   private seqCounter = 0;
+
+  /** Newest sequence number this client has produced. */
+  get newestSeq(): number {
+    return this.seqCounter;
+  }
   private ackedSeq = 0;
   private lastError = 0;
   private smoothedError = 0;

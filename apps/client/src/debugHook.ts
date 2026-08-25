@@ -34,8 +34,18 @@ export interface SurviveDebugHook {
     inventoryCount: number;
     heldDefId: string | null;
   } | null;
-  /** The locally predicted position, which is what the camera follows. */
+  /** The locally predicted position: the latest fixed-step rung. */
   predicted(): { x: number; y: number };
+  /** The interpolated position actually drawn this frame. */
+  render(): { x: number; y: number };
+  /**
+   * Where the player sits on screen, and how long the last frame took.
+   *
+   * This is the number the eye actually judges. Both the sprite and the camera are eased,
+   * so a wobble can exist in the difference between them while each is independently
+   * smooth in world space - `render()` alone cannot see it.
+   */
+  screen(): { x: number; y: number; deltaMs: number };
   world(): {
     tick: number;
     day: number;
@@ -45,6 +55,23 @@ export interface SurviveDebugHook {
     lightLevel: number;
   } | null;
   net(): { latencyMs: number; predictionError: number; entityCount: number; chunkCount: number };
+  /**
+   * What the last reconciliation did, or null before the first snapshot.
+   *
+   * `predictionError` alone is a poor diagnostic: it is measured at the acknowledged
+   * frame, so a client running away from the server - a growing backlog, a rate mismatch -
+   * shows up as zero error while the player visibly judders. These are the numbers that
+   * distinguish the cases.
+   */
+  reconcile(): {
+    error: number;
+    ackSeq: number;
+    newestSeq: number;
+    pending: number;
+    replayed: number;
+    corrected: boolean;
+    hardSnapped: boolean;
+  } | null;
   /** Entity ids by kind, for "is there a zombie near me" assertions. */
   entities(): Record<string, string[]>;
   /**
@@ -74,6 +101,7 @@ export function installDebugHook(
   session: GameSession,
   openPanels: () => string[],
   frames: () => { count: number; lastDeltaMs: number },
+  cameraScroll: () => { x: number; y: number },
 ): void {
   const hook: SurviveDebugHook = {
     get connected() {
@@ -101,6 +129,14 @@ export function installDebugHook(
     predicted() {
       const predicted = session.predicted;
       return { x: predicted.x, y: predicted.y };
+    },
+    render() {
+      return session.renderPosition;
+    },
+    screen() {
+      const p = session.renderPosition;
+      const scroll = cameraScroll();
+      return { x: p.x - scroll.x, y: p.y - scroll.y, deltaMs: frames().lastDeltaMs };
     },
     world() {
       const time = session.time;
@@ -145,6 +181,9 @@ export function installDebugHook(
     },
     send(command: Command) {
       session.send(command);
+    },
+    reconcile() {
+      return session.lastReconcileInfo;
     },
     openPanels,
     frames,

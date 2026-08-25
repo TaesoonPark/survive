@@ -141,6 +141,7 @@ export class GameScene extends Phaser.Scene {
         return ui?.openPanelIds ?? [];
       },
       () => ({ count: this.frameCount, lastDeltaMs: this.lastDeltaMs }),
+      () => ({ x: this.cameras.main.scrollX, y: this.cameras.main.scrollY }),
     );
 
     this.scale.on(Phaser.Scale.Events.RESIZE, this.onResize, this);
@@ -245,7 +246,7 @@ export class GameScene extends Phaser.Scene {
     this.pendingRemovals = [];
 
     this.drawSelf(self !== null);
-    this.updateCamera(deltaMs);
+    this.updateCamera();
     this.updateFocus(renderEntities);
     this.updateBuildGhost();
 
@@ -273,7 +274,10 @@ export class GameScene extends Phaser.Scene {
     const self = this.session.self;
     this.selfSprite.setVisible(connected);
     if (!self) return;
-    const predicted = this.session.predicted;
+    // The interpolated position, not the raw prediction: the ladder is 20 Hz and the
+    // display is not, so drawing the rung itself makes the sprite judder against a camera
+    // that eases smoothly. See `GameSession.renderPosition`.
+    const predicted = this.session.renderPosition;
     this.selfSprite.setPosition(predicted.x, predicted.y);
     this.selfSprite.setRotation(this.session.facing);
     this.selfSprite.setDepth(EntityDepth.creature + predicted.y * 0.001);
@@ -310,16 +314,21 @@ export class GameScene extends Phaser.Scene {
    * would add a second smoothing pass on top of prediction and make the world feel like
    * it lags behind the player.
    */
-  private updateCamera(deltaMs: number): void {
+  private updateCamera(): void {
     const camera = this.cameras.main;
-    const predicted = this.session.predicted;
-    // Framerate-independent easing towards the target, recomputed from the predicted
-    // position each frame so long sessions cannot accumulate drift.
-    const lerp = 1 - Math.exp(-deltaMs / 60);
-    const targetX = predicted.x - camera.width / (2 * camera.zoom);
-    const targetY = predicted.y - camera.height / (2 * camera.zoom);
-    camera.scrollX += (targetX - camera.scrollX) * lerp;
-    camera.scrollY += (targetY - camera.scrollY) * lerp;
+    // Locked exactly to the position the sprite is drawn at, not eased towards it.
+    //
+    // The camera used to ease, because its target was the raw 20 Hz prediction and needed
+    // smoothing. `GameSession.renderPosition` now does that smoothing, and easing an
+    // already-eased value makes a second-order filter: at constant speed the two lags
+    // cancel and the sprite sits still on screen, but the moment the player starts, stops
+    // or turns, the lags differ for a few frames and the sprite slides across the screen
+    // and back. Measured as a 0.77 px screen-space step - six times the steady-state
+    // figure - clustered exactly on the frames where movement began and ended, with
+    // reconciliation reporting no error at all. Locking removes the ringing outright:
+    // the world scrolls smoothly and the player holds the centre.
+    camera.scrollX = this.session.renderPosition.x - camera.width / (2 * camera.zoom);
+    camera.scrollY = this.session.renderPosition.y - camera.height / (2 * camera.zoom);
   }
 
   /**

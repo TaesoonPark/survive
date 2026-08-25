@@ -34,9 +34,23 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
   backgroundColor: '#07090a',
-  // Pixel art at integer-ish zoom: smoothing would turn the procedural textures to mush.
-  pixelArt: true,
-  roundPixels: true,
+  // Nearest-neighbour sampling without pixel snapping, spelled out rather than using the
+  // `pixelArt` shorthand.
+  //
+  // `pixelArt: true` is not just a filter setting: Phaser expands it to
+  // `antialias = false` *and* `roundPixels = true`, overwriting whatever `roundPixels` was
+  // given. Setting the shorthand and then asking for smooth scrolling silently loses - the
+  // running game reported `roundPixels: true` while the config literal said false.
+  //
+  // Snapping is not wanted here. The camera runs at zoom 1.5 (see GameScene), where a
+  // source pixel spans one and a half screen pixels however the coordinates are rounded,
+  // so snapping cannot align the grid - all it does is quantise the scroll. Walking covers
+  // 1.31 screen pixels per frame at 120 Hz, so rounding alternates frames that do not move
+  // with frames that move twice as far: measured frame-to-frame jitter of the drawn
+  // position was 0.163 snapped against 0.006 unsnapped, while the world coordinates
+  // underneath were even to within half a percent either way.
+  pixelArt: false,
+  roundPixels: false,
   antialias: false,
   scale: {
     mode: Phaser.Scale.RESIZE,
@@ -52,6 +66,13 @@ const config: Phaser.Types.Core.GameConfig = {
   fps: {
     target: 60,
     forceSetTimeOut: false,
+    // Hand the real elapsed time to update(), not a running average of it.
+    //
+    // The prediction accumulator and the render interpolation both integrate this delta,
+    // while the eye judges the result against real time. Smoothing makes those two clocks
+    // disagree by however much the frame times scatter, and the disagreement shows up as
+    // the drawn speed wandering even though the simulation is perfectly even.
+    smoothStep: false,
   },
   disableContextMenu: true,
   audio: {
