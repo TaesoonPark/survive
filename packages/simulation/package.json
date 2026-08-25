@@ -12,5 +12,8 @@
     "@survive/protocol": "*",
     "@survive/game-data": "*",
     "@survive/world": "*"
+  },
+  "devDependencies": {
+    "@survive/test-utils": "*"
   }
 }

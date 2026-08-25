@@ -12,6 +12,8 @@
   "dependencies": {
     "@survive/protocol": "*",
     "@survive/game-data": "*",
+    "@survive/world": "*",
+    "@survive/simulation": "*",
     "@survive/netcode": "*",
     "phaser": "^4.2.1"
   },
