@@ -13,12 +13,28 @@ import {
 import type { GameData } from '@survive/game-data';
 import { addToInventory, createStack, recomputeCarryWeight } from './items';
 
-/** What a fresh character starts with. Deliberately meagre. */
+/**
+ * What a fresh character starts with. Deliberately meagre, but not inert.
+ *
+ * The materials are here because the kit used to be tool-and-food only, which left a new
+ * character unable to craft anything at all: every hand recipe needs fibre, sticks, stone
+ * or flint, and gathering the first of those needs a tool you have exactly one of. The
+ * amounts are sized to afford *one* choice, not a full set - enough for a second tool or a
+ * first weapon, and then you are gathering. `startingKitAffords` in the tests holds that
+ * line so a recipe cost change cannot quietly make this dead weight again.
+ *
+ * Sticks and fibre come in a little over the single-recipe minimum so a first attempt can
+ * be spent on a torch or a bandage without stranding the player.
+ */
 export const STARTING_KIT: ReadonlyArray<{ defId: string; count: number }> = [
   { defId: 'stone_hatchet', count: 1 },
   { defId: 'cloth_rag', count: 2 },
   { defId: 'berry', count: 3 },
   { defId: 'water_bottle', count: 1 },
+  { defId: 'plant_fiber', count: 8 },
+  { defId: 'stick', count: 4 },
+  { defId: 'stone', count: 2 },
+  { defId: 'flint', count: 1 },
 ];
 
 export interface CreatePlayerOptions {

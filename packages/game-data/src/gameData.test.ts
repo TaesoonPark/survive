@@ -964,7 +964,19 @@ describe('balance sanity', () => {
   });
 
   it('ships the items the simulation hands a new character', () => {
-    for (const id of ['stone_hatchet', 'cloth_rag', 'berry', 'water_bottle']) {
+    // Mirrors STARTING_KIT in @survive/simulation, which cannot be imported here - the
+    // dependency runs the other way. `starting kit` in player.test.ts checks the real list
+    // against the real recipes; this only checks the data ships.
+    for (const id of [
+      'stone_hatchet',
+      'cloth_rag',
+      'berry',
+      'water_bottle',
+      'plant_fiber',
+      'stick',
+      'stone',
+      'flint',
+    ]) {
       expect(data.items.has(id), id).toBe(true);
     }
     // The starting bottle is full, or the first thirst tick is unanswerable.

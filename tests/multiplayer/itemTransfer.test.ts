@@ -37,6 +37,29 @@ afterEach(async () => {
 });
 
 /** Put a stack straight into a connected player's inventory, server-side. */
+/**
+ * Empty the slot holding `defId` onto the ground, and report how much went down.
+ *
+ * Written this way because the tests below used to grant a known amount and drop exactly
+ * that, which quietly assumed the player had none to begin with. The starting kit now
+ * includes stone, so `grant(3)` made a stack of five, dropping three left two behind, and
+ * the wait for "alice has none" never finished.
+ */
+async function dropWholeStack(
+  live: LiveServer,
+  bot: Bot,
+  playerId: string,
+  defId: string,
+): Promise<number> {
+  const player = live.server.simulation.getPlayer(playerId)!;
+  const index = player.inventory.slots.findIndex((entry) => entry?.defId === defId);
+  expect(index, `${playerId} should be holding ${defId}`).toBeGreaterThanOrEqual(0);
+  const count = player.inventory.slots[index]!.count;
+  bot.send({ type: 'dropItem', ref: { kind: 'inventory' }, index, count });
+  await bot.waitFor(() => countIn(live, playerId, defId) === 0, `${playerId} to drop ${defId}`);
+  return count;
+}
+
 function grant(live: LiveServer, playerId: string, defId: string, count: number): void {
   const player = live.server.simulation.getPlayer(playerId);
   expect(player, `expected ${playerId} to be in the world`).toBeDefined();
@@ -131,11 +154,8 @@ describe('item transfer between players', () => {
     bots.push(alice!, bob!);
 
     grant(server, 'alice', 'stone', 3);
-    const slot = server.server.simulation
-      .getPlayer('alice')!
-      .inventory.slots.findIndex((entry) => entry?.defId === 'stone');
-    alice!.send({ type: 'dropItem', ref: { kind: 'inventory' }, index: slot, count: 3 });
-    await alice!.waitFor(() => countIn(server!, 'alice', 'stone') === 0, 'alice to drop');
+    const dropped = await dropWholeStack(server, alice!, 'alice', 'stone');
+    const baseline = countIn(server, 'alice', 'stone') + countIn(server, 'bob', 'stone');
 
     const itemId = Object.values(server.server.simulation.state.items).find(
       (item) => item.stack.defId === 'stone',
@@ -147,8 +167,12 @@ describe('item transfer between players', () => {
     bob!.send({ type: 'pickUpItem', itemEntityId: itemId });
     await sleep(600);
 
-    const total = countIn(server, 'alice', 'stone') + countIn(server, 'bob', 'stone');
-    expect(total).toBe(3);
+    // Measured as a change, not as a total: both players start with stone in their kit, so
+    // "alice and bob hold five between them" was only ever true by accident.
+    const after = countIn(server, 'alice', 'stone') + countIn(server, 'bob', 'stone');
+    // Exactly what went down comes back up, in one player's hands or the other's. A
+    // duplicated stack here would be the classic pickup race bug.
+    expect(after - baseline).toBe(dropped);
     expect(server.server.simulation.state.items[itemId]).toBeUndefined();
   });
 
@@ -158,23 +182,21 @@ describe('item transfer between players', () => {
     bots.push(alice!, bob!);
 
     grant(server, 'alice', 'stone', 2);
-    const slot = server.server.simulation
-      .getPlayer('alice')!
-      .inventory.slots.findIndex((entry) => entry?.defId === 'stone');
-    alice!.send({ type: 'dropItem', ref: { kind: 'inventory' }, index: slot, count: 2 });
-    await alice!.waitFor(() => countIn(server!, 'alice', 'stone') === 0, 'alice to drop');
+    await dropWholeStack(server, alice!, 'alice', 'stone');
     const itemId = Object.values(server.server.simulation.state.items).find(
       (item) => item.stack.defId === 'stone',
     )!.id;
 
     // Teleport Bob far away, then have him ask for it anyway.
+    const bobBefore = countIn(server, 'bob', 'stone');
     const bobPlayer = server.server.simulation.getPlayer('bob')!;
     bobPlayer.x += 5000;
     bobPlayer.rev++;
     bob!.send({ type: 'pickUpItem', itemEntityId: itemId });
     await sleep(600);
 
-    expect(countIn(server, 'bob', 'stone')).toBe(0);
+    // Bob's own starting stone is not evidence of a pickup, so this is a change too.
+    expect(countIn(server, 'bob', 'stone')).toBe(bobBefore);
     expect(server.server.simulation.state.items[itemId]).toBeDefined();
   });
 
