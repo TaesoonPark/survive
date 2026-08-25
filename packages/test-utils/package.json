@@ -1,0 +1,20 @@
+{
+  "name": "@survive/test-utils",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Headless simulation harness, world fixtures and bot clients for integration and multiplayer tests.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@survive/protocol": "*",
+    "@survive/game-data": "*",
+    "@survive/world": "*",
+    "@survive/simulation": "*",
+    "@survive/persistence": "*",
+    "@survive/netcode": "*",
+    "@survive/server": "*"
+  }
+}

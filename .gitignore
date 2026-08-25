@@ -1,0 +1,17 @@
+node_modules/
+dist/
+out/
+# Packaging staging: verbatim copies of already-built bundles, recreated by
+# apps/*/scripts/stage.mjs on every package run.
+apps/*/build/
+.vite/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+saves/
+*.log

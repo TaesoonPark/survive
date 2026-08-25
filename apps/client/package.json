@@ -1,0 +1,21 @@
+{
+  "name": "@survive/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phaser 4 renderer. Rendering, input, animation, audio, camera and UI only - no game rules.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "dependencies": {
+    "@survive/protocol": "*",
+    "@survive/game-data": "*",
+    "@survive/netcode": "*",
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "vite": "^7.0.2"
+  }
+}

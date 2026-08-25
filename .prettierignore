@@ -1,0 +1,19 @@
+node_modules
+dist
+out
+.vite
+coverage
+playwright-report
+test-results
+*.min.js
+saves
+
+# Staged packaging resources: verbatim copies of already-built bundles, recreated by
+# `scripts/stage.mjs` on every package run.
+apps/*/build
+
+# Build output that does not live under dist/. The launcher bundles its renderer straight
+# into the folder Electron serves, so `npm run build` and `npm run format` would otherwise
+# take turns rewriting the same file and each leave the other's gate failing.
+apps/server-launcher/static/renderer.js
+apps/server-launcher/static/renderer.js.map

@@ -1,0 +1,15 @@
+{
+  "name": "@survive/world",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Chunked tile world: deterministic terrain generation, collision grid, line of sight and navigation. No engine dependency.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@survive/protocol": "*",
+    "@survive/game-data": "*"
+  }
+}

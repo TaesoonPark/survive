@@ -1,0 +1,51 @@
+{
+  "name": "survive",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Top-down survival game. Authoritative Node/Colyseus simulation + Phaser 4 client.",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc -b tsconfig.build.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:multiplayer": "vitest run --project multiplayer",
+    "test:gameplay": "playwright test",
+    "dev": "npm-run-all --parallel dev:server dev:client",
+    "dev:server": "npm run dev --workspace @survive/server",
+    "dev:client": "npm run dev --workspace @survive/client",
+    "dev:desktop": "npm run dev --workspace @survive/desktop",
+    "dev:launcher": "npm run dev --workspace @survive/server-launcher",
+    "build": "npm run build --workspace @survive/client && npm run build --workspace @survive/server",
+    "build:client": "npm run build --workspace @survive/client",
+    "build:server": "npm run build --workspace @survive/server",
+    "start:server": "npm run start --workspace @survive/server",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^22.13.0",
+    "eslint": "^9.20.0",
+    "eslint-config-prettier": "^10.0.1",
+    "npm-run-all2": "^7.0.2",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.24.0",
+    "vite": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

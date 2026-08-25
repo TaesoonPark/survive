@@ -1,0 +1,16 @@
+{
+  "name": "@survive/simulation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The authoritative game simulation. Fixed-tick, deterministic, headless. Knows nothing about Phaser, Colyseus or the filesystem.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@survive/protocol": "*",
+    "@survive/game-data": "*",
+    "@survive/world": "*"
+  }
+}

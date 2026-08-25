@@ -1,0 +1,14 @@
+{
+  "name": "@survive/persistence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WorldRepository abstraction plus filesystem, SQLite and in-memory backends. Game logic never sees a database.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@survive/protocol": "*"
+  }
+}

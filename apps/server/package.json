@@ -1,0 +1,32 @@
+{
+  "name": "@survive/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The one and only GameServer. Headless Node process; runs single-player on localhost and dedicated on 0.0.0.0.",
+  "main": "./src/main.ts",
+  "bin": {
+    "survive-server": "./src/main.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts -- --mode dedicated --save world01",
+    "start": "tsx src/main.ts",
+    "build": "node ./build.mjs"
+  },
+  "dependencies": {
+    "@survive/protocol": "*",
+    "@survive/game-data": "*",
+    "@survive/world": "*",
+    "@survive/simulation": "*",
+    "@survive/persistence": "*",
+    "colyseus": "^0.17.10",
+    "@colyseus/ws-transport": "^0.17.13"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  }
+}

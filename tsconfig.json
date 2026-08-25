@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "packages/*/src/**/*.ts",
+    "apps/*/src/**/*.ts",
+    "tests/**/*.ts",
+    "tools/**/*.ts",
+    "tooling/**/*.ts",
+    "*.config.ts"
+  ],
+  "exclude": ["node_modules", "**/dist/**", "**/out/**", "**/.vite/**"]
+}

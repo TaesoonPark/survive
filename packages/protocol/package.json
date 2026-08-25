@@ -1,0 +1,14 @@
+{
+  "name": "@survive/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure, JSON-serializable game state contracts, commands, events, wire messages, seeded RNG and the fixed simulation clock. Depends on nothing.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

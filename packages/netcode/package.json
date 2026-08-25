@@ -1,0 +1,15 @@
+{
+  "name": "@survive/netcode",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Client-side networking: Colyseus connection, input prediction, reconciliation, remote entity interpolation, snapshot store.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@survive/protocol": "*",
+    "colyseus.js": "^0.16.22"
+  }
+}

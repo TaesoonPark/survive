@@ -1,0 +1,14 @@
+{
+  "name": "@survive/game-data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Static content tables: items, recipes, structures, resource nodes, crops, creatures, loot. Pure data plus lookup helpers.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@survive/protocol": "*"
+  }
+}
