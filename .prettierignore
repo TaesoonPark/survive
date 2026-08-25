@@ -17,3 +17,6 @@ apps/*/build
 # take turns rewriting the same file and each leave the other's gate failing.
 apps/server-launcher/static/renderer.js
 apps/server-launcher/static/renderer.js.map
+
+# Git worktrees for background tasks: separate checkouts, formatted on their own branch.
+.claude/worktrees

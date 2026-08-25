@@ -6,6 +6,9 @@ export default tseslint.config(
   {
     ignores: [
       '**/node_modules/**',
+      // Git worktrees for background tasks. Separate checkouts with their own configs -
+      // linting them from here reports another branch's problems as this one's.
+      '.claude/worktrees/**',
       '**/dist/**',
       // Staged packaging resources - copies of dist/, not sources.
       'apps/*/build/**',
