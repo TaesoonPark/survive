@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
-import type { Command } from '@survive/protocol';
+import type { Command, PlayerState } from '@survive/protocol';
 import type { GameData } from '@survive/game-data';
 import { Hud } from '../ui/hud';
-import { el, injectUiStyles } from '../ui/kit';
+import { el, injectUiStyles, worldTooltip } from '../ui/kit';
+import { destroyTooltip, hideTooltip, showTooltip } from '../ui/tooltip';
 import type { DragState, DropTarget, Panel, UiContext } from '../ui/panel';
 import { createPanels } from '../ui/panels';
 import type { GameScene } from './GameScene';
@@ -16,6 +17,9 @@ import type { UiAction } from '../input/controls';
  * actual widgets are DOM (see `ui/kit.ts` for why); this scene owns their lifecycle and
  * decides when the world should stop listening to the keyboard.
  */
+/** Owner token for the world tooltip, so DOM tooltips and this one can hand off cleanly. */
+const WORLD_TOOLTIP = Symbol('world-tooltip');
+
 export class UiScene extends Phaser.Scene {
   static readonly KEY = 'Ui';
 
@@ -210,11 +214,35 @@ export class UiScene extends Phaser.Scene {
     else if (self?.alive && this.openIds.has('death')) this.closePanel('death');
 
     for (const id of this.openIds) this.panels.get(id)?.update?.(this.ctx);
+
+    this.updateWorldTooltip(self);
+  }
+
+  /**
+   * The tooltip for whatever the cursor is over in the world.
+   *
+   * Driven from here rather than from pointer events, because the target moves on its own:
+   * a zombie walks under a still cursor, a tree scrolls past as the player runs. Polling the
+   * hover target once a frame is what makes the tooltip follow the world instead of only the
+   * mouse.
+   *
+   * `WORLD_TOOLTIP` owns the layer while it is showing, so a DOM slot the cursor moves onto
+   * takes it over cleanly and the two do not fight for it every frame.
+   */
+  private updateWorldTooltip(self: PlayerState | null): void {
+    const hover = this.world.hoverTarget();
+    const text = hover ? worldTooltip(hover.snapshot, this.ctx.data, self) : null;
+    if (!hover || !text) {
+      hideTooltip(WORLD_TOOLTIP);
+      return;
+    }
+    showTooltip(WORLD_TOOLTIP, text, hover.screenX, hover.screenY);
   }
 
   private teardown(): void {
     this.world.events.off('ui-action', this.onUiAction, this);
     for (const id of [...this.openIds]) this.closePanel(id);
     this.root.remove();
+    destroyTooltip();
   }
 }

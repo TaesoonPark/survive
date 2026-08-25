@@ -1,4 +1,4 @@
-import type { Command, EntitySnapshotKind } from '@survive/protocol';
+import type { Command, EntitySnapshot, EntitySnapshotKind } from '@survive/protocol';
 import type { GameSession } from './net/session';
 
 /**
@@ -83,6 +83,24 @@ export interface SurviveDebugHook {
    * from, so it reveals nothing the client was not already told.
    */
   nearest(kind: EntitySnapshotKind): { id: string; x: number; y: number; distance: number } | null;
+  /**
+   * One replicated entity by id, so a test can watch a specific thing change.
+   *
+   * `nearest` finds a target; this follows it. Asserting on a resource node's `harvests`
+   * counter is how "holding the key keeps gathering" is distinguished from "the key worked
+   * once" - the inventory cannot tell them apart, because the second harvest stacks into
+   * the slot the first one made.
+   */
+  entity(id: string): EntitySnapshot | null;
+  /**
+   * Id of the entity the interact key would act on right now, or null.
+   *
+   * Standing next to the thing you meant is not the same as it being the focus: the search
+   * takes the *nearest* interactable, so a patch of grass at your feet outranks the tree you
+   * walked to. A test that presses the key without checking this harvests the grass and
+   * reports the tree as undamaged.
+   */
+  focusId(): string | null;
   /** Send an intent. Validated server-side like any other. */
   send(command: Command): void;
   /** Panel ids currently open. */
@@ -102,6 +120,7 @@ export function installDebugHook(
   openPanels: () => string[],
   frames: () => { count: number; lastDeltaMs: number },
   cameraScroll: () => { x: number; y: number },
+  focusId: () => string | null,
 ): void {
   const hook: SurviveDebugHook = {
     get connected() {
@@ -178,6 +197,12 @@ export function installDebugHook(
         if (!best || distance < best.distance) best = { id: entity.id, x, y, distance };
       }
       return best;
+    },
+    focusId() {
+      return focusId();
+    },
+    entity(id: string) {
+      return session.store.entity(id) ?? null;
     },
     send(command: Command) {
       session.send(command);

@@ -1,4 +1,4 @@
-import type { ItemStack } from '@survive/protocol';
+import type { EntitySnapshot, ItemStack, PlayerState } from '@survive/protocol';
 import type { GameData } from '@survive/game-data';
 import { RARITY_COLOR, UI, cssColor } from '../art/palette';
 import { TextureKey } from '../art/textures';
@@ -423,4 +423,117 @@ export function injectUiStyles(): void {
     }
   `;
   document.head.append(style);
+}
+
+/**
+ * Tooltip text for something in the world: a resource node, a dropped item, a structure,
+ * a creature.
+ *
+ * The information a player actually needs before acting, which for a node is "what tool,
+ * and what do I get" - the two questions that otherwise get answered by walking over and
+ * swinging at it. Nothing here is secret: it is all either in the data tables the client
+ * ships or already in the snapshot it was sent.
+ */
+export function worldTooltip(
+  snapshot: EntitySnapshot,
+  data: GameData,
+  player?: PlayerState | null,
+): string | null {
+  const lines: string[] = [];
+  const condition = (health: number, maxHealth: number): string =>
+    `Condition ${Math.round((health / Math.max(1, maxHealth)) * 100)}%`;
+
+  switch (snapshot.k) {
+    case 'node': {
+      const def = data.nodes.get(snapshot.defId);
+      if (!def) return humanize(snapshot.defId);
+      lines.push(def.name);
+      if (snapshot.depleted) {
+        lines.push('', 'Depleted');
+        break;
+      }
+      lines.push('', condition(snapshot.health, snapshot.maxHealth));
+      if (def.toolKinds.length > 0) {
+        const tools = def.toolKinds.join(' or ');
+        const held = player
+          ? holdsSuitableTool(player, def.toolKinds, def.minToolTier, data)
+          : null;
+        // Called out because `wrongToolMultiplier: 0` means the wrong tool does *nothing* -
+        // the player swings, the node does not move, and there is no other feedback.
+        const suffix = held === false ? ' - you have none' : '';
+        lines.push(`Needs ${tools} (tier ${def.minToolTier})${suffix}`);
+      } else {
+        lines.push('Harvested by hand');
+      }
+      const yields = def.yields
+        .map((entry) => {
+          const name = data.items.get(entry.defId)?.name ?? humanize(entry.defId);
+          const amount = entry.min === entry.max ? `${entry.min}` : `${entry.min}-${entry.max}`;
+          const chance = entry.chance < 1 ? ` (${Math.round(entry.chance * 100)}%)` : '';
+          return `${amount} ${name}${chance}`;
+        })
+        .slice(0, 5);
+      if (yields.length > 0) lines.push(`Yields ${yields.join(', ')}`);
+      if (def.skill) lines.push(`Trains ${def.skill}`);
+      break;
+    }
+    case 'item': {
+      // The same text the inventory shows, so an item on the ground reads exactly as it
+      // will once picked up.
+      return itemTooltip(snapshot.stack, data);
+    }
+    case 'structure': {
+      const def = data.structures.get(snapshot.defId);
+      if (!def) return humanize(snapshot.defId);
+      lines.push(def.name);
+      lines.push('');
+      if (snapshot.progress < 1)
+        lines.push(`Under construction ${Math.round(snapshot.progress * 100)}%`);
+      lines.push(condition(snapshot.health, snapshot.maxHealth));
+      const roles: string[] = [];
+      if (def.container) roles.push('storage');
+      if (def.door) roles.push(snapshot.door?.open ? 'door (open)' : 'door (closed)');
+      if (def.station) roles.push(`${def.station} station`);
+      if (def.bed) roles.push('bed');
+      if (def.plot) roles.push('farm plot');
+      if (roles.length > 0) lines.push(roles.join(', '));
+      break;
+    }
+    case 'zombie': {
+      const def = data.zombies.get(snapshot.defId);
+      lines.push(def?.name ?? humanize(snapshot.defId));
+      lines.push('', condition(snapshot.health, snapshot.maxHealth));
+      if (snapshot.crawling) lines.push('Crawling');
+      break;
+    }
+    case 'animal': {
+      const def = data.animals.get(snapshot.defId);
+      lines.push(def?.name ?? humanize(snapshot.defId));
+      lines.push('', condition(snapshot.health, snapshot.maxHealth));
+      break;
+    }
+    case 'player':
+      lines.push(snapshot.name);
+      break;
+    default:
+      return null;
+  }
+  return lines.length > 0 ? lines.join('\n') : null;
+}
+
+/** Does the player hold a tool of one of these kinds, at this tier or better? */
+function holdsSuitableTool(
+  player: PlayerState,
+  kinds: readonly string[],
+  minTier: number,
+  data: GameData,
+): boolean {
+  const candidates = [player.equipment.mainHand, ...player.inventory.slots];
+  for (const stack of candidates) {
+    if (!stack) continue;
+    const tool = data.items.get(stack.defId)?.tool;
+    if (!tool || tool.tier < minTier) continue;
+    if (tool.kinds.some((kind) => kinds.includes(kind))) return true;
+  }
+  return false;
 }

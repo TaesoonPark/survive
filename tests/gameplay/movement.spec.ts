@@ -342,4 +342,27 @@ test.describe('render smoothness', () => {
     expect(flags.pixelArt).toBe(false);
     expect(flags.antialias).toBe(false);
   });
+  test('keeps the player at the centre of the screen, at this zoom', async ({ page }) => {
+    await openClient(page);
+    await joinServer(page);
+    await page.waitForTimeout(600);
+
+    const offset = await page.evaluate(() => {
+      const cam = window.game!.scene.getScene('Game')!.cameras.main;
+      const drawn = window.__survive!.render();
+      const middle = cam.getWorldPoint(cam.width / 2, cam.height / 2);
+      return { dx: middle.x - drawn.x, dy: middle.y - drawn.y, zoom: cam.zoom };
+    });
+
+    // Asserted against the camera's own transform, not against arithmetic on scrollX.
+    // Phaser zooms about the camera midpoint, so the world point at the centre of the
+    // screen is `scrollX + width / 2` whatever the zoom is - and the camera code used the
+    // obvious-looking `x - width / (2 * zoom)`, which left the player 213 px up and to the
+    // left of centre at zoom 1.5. It went unnoticed for as long as nothing had to convert
+    // between the two directions; pointing the mouse at a tree then missed by exactly that
+    // much. This only bites at a zoom other than 1, so the zoom is asserted too.
+    expect(offset.zoom, 'a zoom of 1 would hide this regression').not.toBe(1);
+    expect(Math.abs(offset.dx)).toBeLessThan(1);
+    expect(Math.abs(offset.dy)).toBeLessThan(1);
+  });
 });

@@ -97,9 +97,20 @@ export interface IntentSample {
   primary: boolean;
   secondary: boolean;
   block: boolean;
+  /**
+   * Whether the interact key is still held.
+   *
+   * Interact itself is a one-shot action, but gathering repeats on a cooldown while the key
+   * is down, so the caller needs the held state as well as the press. See
+   * `GameScene.repeatGather`.
+   */
+  interactHeld: boolean;
   /** Pointer position in world space. */
   pointerWorldX: number;
   pointerWorldY: number;
+  /** Pointer position in screen space, for placing DOM overlays under the cursor. */
+  pointerScreenX: number;
+  pointerScreenY: number;
   aimAngle: number;
 }
 
@@ -270,8 +281,11 @@ export class Controls {
       primary: this.pointerPrimary,
       secondary: this.pointerSecondary,
       block: this.isDown(bindings.block),
+      interactHeld: this.isDown(bindings.interact),
       pointerWorldX: world.x,
       pointerWorldY: world.y,
+      pointerScreenX: this.pointerScreenX,
+      pointerScreenY: this.pointerScreenY,
       aimAngle,
     };
   }

@@ -12,6 +12,7 @@ import {
 import type { GameData } from '@survive/game-data';
 import { UI } from '../art/palette';
 import { el, humanize, itemSlot, itemTooltip, statBar } from './kit';
+import { attachTooltip } from './tooltip';
 import type { UiContext } from './panel';
 
 /**
@@ -118,7 +119,7 @@ export class Hud {
         badge: String(index + 1),
         selected: index === player.activeHotbar,
       });
-      if (stack) node.title = itemTooltip(stack, ctx.data);
+      if (stack) attachTooltip(node, () => itemTooltip(stack, ctx.data));
       node.addEventListener('click', () => ctx.send({ type: 'selectHotbar', index }));
       return node;
     });

@@ -22,6 +22,7 @@ import {
   panelFrame,
   statBar,
 } from '../kit';
+import { attachTooltip } from '../tooltip';
 import type { DragState, DropTarget, Panel, UiContext } from '../panel';
 
 /**
@@ -356,7 +357,7 @@ export function createContainerPanel(): Panel {
       },
       children: [visual],
     });
-    if (stack) node.title = itemTooltip(stack, ctx.data);
+    if (stack) attachTooltip(node, () => itemTooltip(stack, ctx.data));
 
     // Every slot is a drop target, empty ones included: that is how a player makes room.
     // Indifferent to where the drag started, so a stack coming out of the inventory

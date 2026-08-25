@@ -8,6 +8,7 @@ import {
 import type { ItemDef } from '@survive/game-data';
 import { UI, cssColor } from '../../art/palette';
 import { button, el, humanize, itemSlot, itemTooltip, panelFrame, statBar } from '../kit';
+import { attachTooltip } from '../tooltip';
 import type { Panel, UiContext } from '../panel';
 
 /**
@@ -543,7 +544,7 @@ export function createInventoryPanel(): Panel {
       },
       children: [visual],
     });
-    if (stack) node.title = itemTooltip(stack, ctx.data);
+    if (stack) attachTooltip(node, () => itemTooltip(stack, ctx.data));
 
     // Empty slots are still drop targets - that is how a player makes room.
     bindDropTarget(node, ctx, options.ref, options.index);
