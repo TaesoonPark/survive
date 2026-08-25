@@ -2,7 +2,6 @@ import {
   CHUNK_TILES,
   Tile,
   chunkKey,
-  circleOverlapsAabb,
   pixelToTile,
   tileProps,
   type ChunkTerrain,
@@ -11,9 +10,10 @@ import {
 import {
   CollisionFlag,
   DEFAULT_FLOW_FIELD_MAX_AGE_TICKS,
-  MAX_SWEEP_SUBSTEPS,
   OPAQUE_MASK,
   SOLID_MASK,
+  circleOverlapsSolid,
+  sweepCircle,
   type CollisionFlags,
   type FlowField,
   type MoveResult,
@@ -99,74 +99,27 @@ export function createFlatWorld(options: FlatWorldOptions = {}): FlatWorld {
     return (getCollision(tileX, tileY) & OPAQUE_MASK) !== 0;
   }
 
+  /**
+   * Delegated, like {@link moveCircle}. This copy had no contact tolerance, so it called a
+   * body grazing a wall "inside geometry" where the real grid does not - and a double that
+   * classifies contact differently from the real thing quietly changes what every movement
+   * test is measuring.
+   */
   function circleBlocked(x: number, y: number, radius: number): boolean {
-    const minX = pixelToTile(x - radius);
-    const maxX = pixelToTile(x + radius);
-    const minY = pixelToTile(y - radius);
-    const maxY = pixelToTile(y + radius);
-    for (let tileY = minY; tileY <= maxY; tileY++) {
-      for (let tileX = minX; tileX <= maxX; tileX++) {
-        if (!isSolidTile(tileX, tileY)) continue;
-        if (circleOverlapsAabb(x, y, radius, { x: tileX * 32, y: tileY * 32, w: 32, h: 32 })) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return circleOverlapsSolid(isSolidTile, x, y, radius);
   }
 
   /**
-   * Axis-separated slide, sub-stepped so nothing tunnels.
+   * Delegated to the real sweep, not transcribed.
    *
-   * A single big step can jump clean over a one-tile wall, which shows up as
-   * "sometimes the zombie walks through the door frame" - so cap each sub-step at half
-   * a tile.
-   *
-   * The two guards below are not belt-and-braces, they are the contract: this double
-   * stands in for `collision.ts`, and a double that survives less than the real thing
-   * turns a test of the real guard into a hung process. A non-finite delta returns the
-   * body where it stood (there is no meaningful destination), and the sub-step count is
-   * capped so a huge-but-finite delta goes coarse instead of spinning.
+   * This double stands in for `collision.ts`, and a double that survives *less* than the
+   * real thing turns a test of a working guard into a hung process - which is exactly what
+   * happened when this was a copy: it capped its sub-steps at a hard-coded 16 while the
+   * grid used `MAX_SWEEP_STEP`. Only the notion of what is solid differs here, so only
+   * that is supplied.
    */
   function moveCircle(x: number, y: number, dx: number, dy: number, radius: number): MoveResult {
-    if (
-      !Number.isFinite(dx) ||
-      !Number.isFinite(dy) ||
-      !Number.isFinite(x) ||
-      !Number.isFinite(y)
-    ) {
-      return { x, y, blockedX: false, blockedY: false };
-    }
-    // Already inside geometry - spawned in a wall, a wall built on top, a teleport. Every
-    // candidate position would be rejected and the body would be stuck for good, so let it
-    // move freely until it is out. The real grid does exactly this; without it the double
-    // freezes an entity the shipping code frees, which is a difference a test would read as
-    // a bug in the entity rather than in the harness.
-    const stuck = circleBlocked(x, y, radius);
-    const steps = stuck
-      ? 1
-      : Math.min(
-          MAX_SWEEP_SUBSTEPS,
-          Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 16)),
-        );
-    let currentX = x;
-    let currentY = y;
-    let blockedX = false;
-    let blockedY = false;
-    const stepX = dx / steps;
-    const stepY = dy / steps;
-
-    for (let i = 0; i < steps; i++) {
-      if (stepX !== 0) {
-        if (!stuck && circleBlocked(currentX + stepX, currentY, radius)) blockedX = true;
-        else currentX += stepX;
-      }
-      if (stepY !== 0) {
-        if (!stuck && circleBlocked(currentX, currentY + stepY, radius)) blockedY = true;
-        else currentY += stepY;
-      }
-    }
-    return { x: currentX, y: currentY, blockedX, blockedY };
+    return sweepCircle(circleBlocked, x, y, dx, dy, radius);
   }
 
   /**

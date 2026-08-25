@@ -163,15 +163,121 @@ export interface CollisionGrid {
   moveCircle(x: number, y: number, dx: number, dy: number, radius: number): MoveResult;
 }
 
+/**
+ * Axis-separated slide of a circle through arbitrary geometry, sub-stepped so nothing
+ * tunnels.
+ *
+ * Exported and parameterised by the overlap test because three places need to resolve the
+ * same movement against three different notions of what is solid: the authoritative grid,
+ * the client's prediction, and the flat-world test double. They used to each carry their
+ * own transcription of this loop, and the copies drifted - the double capped its sub-steps
+ * at a hard-coded 16 instead of {@link MAX_SWEEP_STEP}, and the client had no sub-stepping,
+ * no embedded-body escape and no non-finite guard at all. Measured against this function,
+ * the client landed up to 12.5 px away on a knockback and refused to move at all while
+ * embedded, where the server walked out at full speed.
+ *
+ * `overlaps` decides what blocks: it is called with a candidate centre and the radius, and
+ * must be a pure static test. The three guards below are the contract, not belt and braces:
+ *
+ * - A non-finite delta returns the body where it stood. There is no meaningful destination,
+ *   and `Math.ceil(Infinity / MAX_SWEEP_STEP)` sub-steps is an uninterruptible loop.
+ * - A body already inside geometry - spawned in a wall, a wall built on top of it, a
+ *   teleport - gets one unchecked step, because every candidate position would be rejected
+ *   and it would be stuck for good.
+ * - The sub-step count is capped, so a huge-but-finite delta goes coarse instead of
+ *   spinning for millions of overlap tests.
+ */
+/**
+ * Reused box for the circle-vs-tile test.
+ *
+ * `circleOverlapsAabb` takes an {@link Aabb}, and allocating one per tile in the scan loop
+ * shows up in profiles. It never outlives a single overlap test and callers are all
+ * single-threaded - the simulation tick and the client's own prediction - so one instance
+ * is safe to share.
+ */
+const scratchBox: Aabb = { x: 0, y: 0, w: TILE_SIZE, h: TILE_SIZE };
+
+/**
+ * Does a circle overlap any solid tile, by the same rule the authoritative grid uses?
+ *
+ * Exported and parameterised by `isSolid` for the same reason as {@link sweepCircle}: the
+ * grid, the client's prediction and the test double all need this exact answer, and a
+ * near-miss is worse than an obvious difference. The client used to test the circle's
+ * *bounding box* against the tile map with no contact tolerance, which is stricter - and
+ * being stricter here is not the safe direction. Combined with the embedded-body escape in
+ * `sweepCircle`, a body that had merely slid up against a wall was classified as already
+ * inside it and handed free movement straight through, which is precisely the failure the
+ * tolerance below exists to prevent.
+ */
+export function circleOverlapsSolid(
+  isSolid: (tileX: number, tileY: number) => boolean,
+  x: number,
+  y: number,
+  radius: number,
+): boolean {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+  const shrunk = radius - CONTACT_TOLERANCE;
+  const r = shrunk > 0 ? shrunk : 0;
+  const minTileX = pixelToTile(x - r);
+  const maxTileX = pixelToTile(x + r);
+  const minTileY = pixelToTile(y - r);
+  const maxTileY = pixelToTile(y + r);
+  for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      if (!isSolid(tileX, tileY)) continue;
+      scratchBox.x = tileX * TILE_SIZE;
+      scratchBox.y = tileY * TILE_SIZE;
+      if (circleOverlapsAabb(x, y, r, scratchBox)) return true;
+    }
+  }
+  return false;
+}
+
+export function sweepCircle(
+  overlaps: (x: number, y: number, radius: number) => boolean,
+  x: number,
+  y: number,
+  dx: number,
+  dy: number,
+  radius: number,
+): MoveResult {
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || !Number.isFinite(x) || !Number.isFinite(y)) {
+    return { x, y, blockedX: false, blockedY: false };
+  }
+  if (dx === 0 && dy === 0) return { x, y, blockedX: false, blockedY: false };
+
+  const stuck = overlaps(x, y, radius);
+
+  const span = Math.max(Math.abs(dx), Math.abs(dy));
+  const steps = stuck
+    ? 1
+    : Math.min(MAX_SWEEP_SUBSTEPS, Math.max(1, Math.ceil(span / MAX_SWEEP_STEP)));
+  const stepX = dx / steps;
+  const stepY = dy / steps;
+
+  let px = x;
+  let py = y;
+  let blockedX = false;
+  let blockedY = false;
+
+  for (let i = 0; i < steps; i++) {
+    if (stepX !== 0) {
+      const nextX = px + stepX;
+      if (!stuck && overlaps(nextX, py, radius)) blockedX = true;
+      else px = nextX;
+    }
+    if (stepY !== 0) {
+      const nextY = py + stepY;
+      if (!stuck && overlaps(px, nextY, radius)) blockedY = true;
+      else py = nextY;
+    }
+  }
+
+  return { x: px, y: py, blockedX, blockedY };
+}
+
 export function createCollisionGrid(): CollisionGrid {
   const chunks = new Map<number, Uint16Array>();
-
-  /**
-   * Reused box for the circle-vs-tile test. `circleOverlapsAabb` takes an {@link Aabb},
-   * and allocating one per tile in the scan loop shows up in profiles; the grid is only
-   * ever touched from the simulation's single thread, and the box never outlives one test.
-   */
-  const box: Aabb = { x: 0, y: 0, w: TILE_SIZE, h: TILE_SIZE };
 
   function chunkAtTile(tileX: number, tileY: number): Uint16Array | undefined {
     return chunks.get(chunkId(tileToChunk(tileX), tileToChunk(tileY)));
@@ -194,22 +300,7 @@ export function createCollisionGrid(): CollisionGrid {
    * negative radius would otherwise behave exactly like a positive one.
    */
   function overlapsSolid(x: number, y: number, radius: number): boolean {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
-    const shrunk = radius - CONTACT_TOLERANCE;
-    const r = shrunk > 0 ? shrunk : 0;
-    const minTileX = pixelToTile(x - r);
-    const maxTileX = pixelToTile(x + r);
-    const minTileY = pixelToTile(y - r);
-    const maxTileY = pixelToTile(y + r);
-    for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-      for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
-        if (!isSolid(tileX, tileY)) continue;
-        box.x = tileX * TILE_SIZE;
-        box.y = tileY * TILE_SIZE;
-        if (circleOverlapsAabb(x, y, r, box)) return true;
-      }
-    }
-    return false;
+    return circleOverlapsSolid(isSolid, x, y, radius);
   }
 
   function circleBlocked(x: number, y: number, radius: number): boolean {
@@ -217,47 +308,7 @@ export function createCollisionGrid(): CollisionGrid {
   }
 
   function moveCircle(x: number, y: number, dx: number, dy: number, radius: number): MoveResult {
-    if (
-      !Number.isFinite(dx) ||
-      !Number.isFinite(dy) ||
-      !Number.isFinite(x) ||
-      !Number.isFinite(y)
-    ) {
-      return { x, y, blockedX: false, blockedY: false };
-    }
-    if (dx === 0 && dy === 0) return { x, y, blockedX: false, blockedY: false };
-
-    // Already embedded in geometry (spawned inside a wall, a wall built on top of us, a
-    // teleport): every candidate position would be rejected and the entity would be stuck
-    // for good. Let it move freely until it is out.
-    const stuck = overlapsSolid(x, y, radius);
-
-    const span = Math.max(Math.abs(dx), Math.abs(dy));
-    const steps = stuck
-      ? 1
-      : Math.min(MAX_SWEEP_SUBSTEPS, Math.max(1, Math.ceil(span / MAX_SWEEP_STEP)));
-    const stepX = dx / steps;
-    const stepY = dy / steps;
-
-    let px = x;
-    let py = y;
-    let blockedX = false;
-    let blockedY = false;
-
-    for (let i = 0; i < steps; i++) {
-      if (stepX !== 0) {
-        const nextX = px + stepX;
-        if (!stuck && overlapsSolid(nextX, py, radius)) blockedX = true;
-        else px = nextX;
-      }
-      if (stepY !== 0) {
-        const nextY = py + stepY;
-        if (!stuck && overlapsSolid(px, nextY, radius)) blockedY = true;
-        else py = nextY;
-      }
-    }
-
-    return { x: px, y: py, blockedX, blockedY };
+    return sweepCircle(overlapsSolid, x, y, dx, dy, radius);
   }
 
   return {

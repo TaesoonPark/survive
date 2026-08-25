@@ -34,6 +34,7 @@ import {
   resolveMoveMode,
   baseSpeedFor,
 } from '@survive/simulation/core/movement';
+import { circleOverlapsSolid, sweepCircle } from '@survive/world/collision';
 
 /**
  * The client's view of the game.
@@ -141,19 +142,30 @@ export class PredictionWorld {
     return tile === undefined ? 1 : tileProps(tile).speed;
   }
 
+  /**
+   * Delegated, so "solid" means the same thing here as on the server.
+   *
+   * This used to test the circle's *bounding box* against the tile map, which blocks on
+   * corners the real grid lets through, and it had no contact tolerance. Being stricter is
+   * not the safe direction: with the embedded-body escape now in play, a body that had
+   * merely slid up against a wall was classified as already inside it and handed free
+   * movement straight through. Only the notion of which tiles are solid is local.
+   */
   private circleBlocked(x: number, y: number, radius: number): boolean {
-    const minX = Math.floor((x - radius) / 32);
-    const maxX = Math.floor((x + radius) / 32);
-    const minY = Math.floor((y - radius) / 32);
-    const maxY = Math.floor((y + radius) / 32);
-    for (let tileY = minY; tileY <= maxY; tileY++) {
-      for (let tileX = minX; tileX <= maxX; tileX++) {
-        if (this.solidAtTile(tileX, tileY)) return true;
-      }
-    }
-    return false;
+    return circleOverlapsSolid((tileX, tileY) => this.solidAtTile(tileX, tileY), x, y, radius);
   }
 
+  /**
+   * Delegated to the server's own sweep, with only "what is solid" supplied locally.
+   *
+   * This used to be a single axis-separated step with no sub-stepping, no escape for a body
+   * already inside geometry and no non-finite guard - a hand-copy of the server's loop that
+   * had lost three of its parts, in the same file and for the same reason the tile property
+   * table had drifted. Measured against the real grid: identical up to a 16 px step, so
+   * walking (5.25 px per step) and running (9.3 px) never differed, but a full knockback
+   * taken at a run is about 25 px and landed 12.5 px out, and while embedded the server
+   * walked clear at 105 px/s where this predicted no movement at all.
+   */
   moveCircle(
     x: number,
     y: number,
@@ -161,19 +173,7 @@ export class PredictionWorld {
     dy: number,
     radius: number,
   ): { x: number; y: number; blockedX: boolean; blockedY: boolean } {
-    let nextX = x;
-    let nextY = y;
-    let blockedX = false;
-    let blockedY = false;
-    if (dx !== 0) {
-      if (this.circleBlocked(x + dx, y, radius)) blockedX = true;
-      else nextX = x + dx;
-    }
-    if (dy !== 0) {
-      if (this.circleBlocked(nextX, y + dy, radius)) blockedY = true;
-      else nextY = y + dy;
-    }
-    return { x: nextX, y: nextY, blockedX, blockedY };
+    return sweepCircle((cx, cy, r) => this.circleBlocked(cx, cy, r), x, y, dx, dy, radius);
   }
 }
 
