@@ -80,6 +80,21 @@ export function showTooltip(source: unknown, text: string, x: number, y: number)
   position(node, x, y);
 }
 
+/**
+ * Drop the tooltip if the element that owns it has left the document.
+ *
+ * `pointerleave` never fires for an element that is *removed* while the cursor is over it,
+ * so closing the inventory on a hovered slot left its tooltip on screen, describing an item
+ * in a panel that was no longer there. The same happens whenever a panel re-renders a slot
+ * the cursor happens to be resting on.
+ *
+ * Polled once a frame rather than watched with a MutationObserver: the check is a single
+ * property read, and the UI scene is already running every frame.
+ */
+export function pruneTooltip(): void {
+  if (owner instanceof HTMLElement && !owner.isConnected) hideTooltip(owner);
+}
+
 /** Hide the tooltip, if `source` is the one currently showing it. */
 export function hideTooltip(source: unknown): void {
   if (!layer || (owner !== null && owner !== source)) return;
@@ -144,14 +159,59 @@ function injectTooltipStyles(): void {
     }
     .tip-line { color: ${cssColor(UI.textMuted)}; white-space: pre-wrap; }
     .tip-gap { height: 5px; }
+
+    .focus-label {
+      position: fixed; z-index: 11; pointer-events: none;
+      transform: translate(-50%, -100%);
+      padding: 2px 7px; border-radius: 3px; white-space: nowrap;
+      background: ${cssColor(UI.panel, 0.88)};
+      border: 1px solid ${cssColor(UI.panelEdge)};
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 11px; letter-spacing: 0.02em; color: ${cssColor(UI.text)};
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
   `;
   document.head.append(style);
+}
+
+let focusLabel: HTMLDivElement | null = null;
+
+/**
+ * A name tag over the thing the interact key is aimed at.
+ *
+ * Separate from the hover tooltip on purpose, and both can be up at once: they answer
+ * different questions. The hover tooltip describes whatever the *cursor* is over, which is
+ * usually not what the player is standing next to - and the interaction ring shows *that*
+ * something is targeted without ever saying what. Standing in a thicket, the ring alone
+ * leaves the player pressing the key to find out which bush they are about to strip.
+ *
+ * Deliberately just the name. The detail belongs in the tooltip the player asked for by
+ * pointing at it; this one appears without being asked, so it stays small.
+ */
+export function showFocusLabel(text: string, x: number, y: number): void {
+  if (!focusLabel) {
+    injectTooltipStyles();
+    focusLabel = el('div', { className: 'focus-label' });
+    document.body.append(focusLabel);
+  }
+  if (focusLabel.textContent !== text) focusLabel.textContent = text;
+  focusLabel.style.display = '';
+  // Centred on the target and lifted clear of it; the transform keeps it centred whatever
+  // the text width turns out to be.
+  focusLabel.style.left = `${Math.round(x)}px`;
+  focusLabel.style.top = `${Math.round(y)}px`;
+}
+
+export function hideFocusLabel(): void {
+  if (focusLabel) focusLabel.style.display = 'none';
 }
 
 /** Drop the layer, for scene teardown. */
 export function destroyTooltip(): void {
   layer?.remove();
   layer = null;
+  focusLabel?.remove();
+  focusLabel = null;
   owner = null;
   if (hideTimer !== null) {
     window.clearTimeout(hideTimer);

@@ -24,7 +24,12 @@ import { addToInventory, createStack, recomputeCarryWeight } from './items';
  * line so a recipe cost change cannot quietly make this dead weight again.
  *
  * Sticks and fibre come in a little over the single-recipe minimum so a first attempt can
- * be spent on a torch or a bandage without stranding the player.
+ * be spent on a torch or a splint without stranding the player: a pickaxe and a spear
+ * together cost three sticks, leaving three.
+ *
+ * Note that this is applied at character *creation*. `GameServer.joinPlayer` loads an
+ * existing character verbatim, so changing this list does nothing for a save that already
+ * has one - the world has to be reset, or a new save started.
  */
 export const STARTING_KIT: ReadonlyArray<{ defId: string; count: number }> = [
   { defId: 'stone_hatchet', count: 1 },
@@ -32,7 +37,7 @@ export const STARTING_KIT: ReadonlyArray<{ defId: string; count: number }> = [
   { defId: 'berry', count: 3 },
   { defId: 'water_bottle', count: 1 },
   { defId: 'plant_fiber', count: 8 },
-  { defId: 'stick', count: 4 },
+  { defId: 'stick', count: 6 },
   { defId: 'stone', count: 2 },
   { defId: 'flint', count: 1 },
 ];

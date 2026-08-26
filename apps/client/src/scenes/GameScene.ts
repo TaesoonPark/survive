@@ -483,6 +483,42 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Screen position of a world point.
+   *
+   * Phaser exposes `getWorldPoint` but not its inverse, and the naive inverse is wrong: the
+   * camera zooms about its own midpoint, so the world point at the centre of the screen is
+   * `scrollX + width / 2` whatever the zoom. Getting this backwards is what left the player
+   * 213 px off centre for as long as nothing needed to convert the other way. A round-trip
+   * test in `movement.spec.ts` pins the two together.
+   */
+  private worldToScreen(x: number, y: number): { x: number; y: number } {
+    const camera = this.cameras.main;
+    const halfWidth = camera.width / 2;
+    const halfHeight = camera.height / 2;
+    return {
+      x: (x - camera.scrollX - halfWidth) * camera.zoom + halfWidth,
+      y: (y - camera.scrollY - halfHeight) * camera.zoom + halfHeight,
+    };
+  }
+
+  /**
+   * The entity the interact key is aimed at, in screen space.
+   *
+   * `y` is lifted to the top of the interaction ring so a label sits above the target
+   * rather than across it.
+   */
+  focusLabelTarget(): { snapshot: EntitySnapshot; screenX: number; screenY: number } | null {
+    if (this.uiCaptured || !this.focusEntityId) return null;
+    const snapshot = this.session.store.entity(this.focusEntityId);
+    if (!snapshot) return null;
+    const world = this.worldToScreen(
+      this.interactRing.x,
+      this.interactRing.y - this.interactRing.displayHeight / 2,
+    );
+    return { snapshot, screenX: world.x, screenY: world.y };
+  }
+
   /** The entity under the cursor, and where the cursor is, for the tooltip layer. */
   hoverTarget(): { snapshot: EntitySnapshot; screenX: number; screenY: number } | null {
     if (!this.hoverEntityId) return null;

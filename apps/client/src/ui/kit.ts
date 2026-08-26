@@ -434,6 +434,34 @@ export function injectUiStyles(): void {
  * swinging at it. Nothing here is secret: it is all either in the data tables the client
  * ships or already in the snapshot it was sent.
  */
+/**
+ * Display name for anything in the world.
+ *
+ * Falls back to a humanised id rather than to the id itself, so a data table that has grown
+ * an entry the client does not know still reads as words.
+ */
+export function entityName(snapshot: EntitySnapshot, data: GameData): string {
+  switch (snapshot.k) {
+    case 'node':
+      return data.nodes.get(snapshot.defId)?.name ?? humanize(snapshot.defId);
+    case 'item': {
+      const def = data.items.get(snapshot.stack.defId);
+      const name = def?.name ?? humanize(snapshot.stack.defId);
+      return snapshot.stack.count > 1 ? `${name} x${snapshot.stack.count}` : name;
+    }
+    case 'structure':
+      return data.structures.get(snapshot.defId)?.name ?? humanize(snapshot.defId);
+    case 'zombie':
+      return data.zombies.get(snapshot.defId)?.name ?? humanize(snapshot.defId);
+    case 'animal':
+      return data.animals.get(snapshot.defId)?.name ?? humanize(snapshot.defId);
+    case 'player':
+      return snapshot.name;
+    default:
+      return humanize(snapshot.k);
+  }
+}
+
 export function worldTooltip(
   snapshot: EntitySnapshot,
   data: GameData,
@@ -447,7 +475,7 @@ export function worldTooltip(
     case 'node': {
       const def = data.nodes.get(snapshot.defId);
       if (!def) return humanize(snapshot.defId);
-      lines.push(def.name);
+      lines.push(entityName(snapshot, data));
       if (snapshot.depleted) {
         lines.push('', 'Depleted');
         break;
@@ -500,20 +528,18 @@ export function worldTooltip(
       break;
     }
     case 'zombie': {
-      const def = data.zombies.get(snapshot.defId);
-      lines.push(def?.name ?? humanize(snapshot.defId));
+      lines.push(entityName(snapshot, data));
       lines.push('', condition(snapshot.health, snapshot.maxHealth));
       if (snapshot.crawling) lines.push('Crawling');
       break;
     }
     case 'animal': {
-      const def = data.animals.get(snapshot.defId);
-      lines.push(def?.name ?? humanize(snapshot.defId));
+      lines.push(entityName(snapshot, data));
       lines.push('', condition(snapshot.health, snapshot.maxHealth));
       break;
     }
     case 'player':
-      lines.push(snapshot.name);
+      lines.push(entityName(snapshot, data));
       break;
     default:
       return null;

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { joinServer, openClient, waitForTicks } from './helpers';
+import { holdKey, joinServer, openClient, waitForTicks, walkTowards } from './helpers';
 
 /**
  * Screen coordinates of a world point, taken from the camera rather than recomputed.
@@ -104,5 +104,71 @@ test.describe('tooltips', () => {
     await empty.hover();
     await page.waitForTimeout(300);
     await expect(page.locator('.tip')).toBeHidden();
+  });
+  test('closing a panel under the cursor takes its tooltip with it', async ({ page }) => {
+    await openClient(page);
+    await joinServer(page);
+    await waitForTicks(page, 20);
+
+    await page.keyboard.press('KeyI');
+    const slot = page.locator('.panel .slot:not(.slot--empty)').first();
+    await expect(slot).toBeVisible();
+    await slot.hover();
+    const tip = page.locator('.tip');
+    await expect(tip).toBeVisible();
+
+    // `pointerleave` never fires for an element that is *removed* while the cursor is over
+    // it, so the tooltip used to stay on screen describing an item in a panel that had
+    // closed - and it stayed until the cursor happened to enter and leave something else.
+    await page.keyboard.press('KeyI');
+    await expect(page.locator('.panel')).toHaveCount(0);
+    await expect(tip).toBeHidden();
+  });
+
+  test('names the thing the interact key is aimed at, over the ring', async ({ page }) => {
+    await openClient(page);
+    await joinServer(page);
+    await waitForTicks(page, 20);
+
+    const node = await nearestNode(page);
+    expect(node, 'expected a resource node within streaming range').not.toBeNull();
+
+    const label = page.locator('.focus-label');
+    const arrived = await walkTowards(
+      page,
+      node!,
+      async () => (await page.evaluate(() => window.__survive!.focusId())) !== null,
+    );
+    expect(arrived, 'expected something to become the interaction target').toBe(true);
+
+    // The ring already says *that* something is targeted; standing in a thicket it does not
+    // say which bush, and the player finds out by pressing the key.
+    await expect(label).toBeVisible();
+    await expect(label).not.toBeEmpty();
+
+    const named = await page.evaluate(() => {
+      const hook = window.__survive!;
+      const id = hook.focusId();
+      const entity = id ? hook.entity(id) : null;
+      return entity?.k ?? null;
+    });
+    expect(named, 'the label should be describing a real entity').not.toBeNull();
+
+    // Placed over the target, not over the player: the two are different points, and a
+    // label pinned to the player would be a second HUD prompt rather than a name tag.
+    const box = await label.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(box).not.toBeNull();
+    expect(box!.y, 'the label should sit above the middle of the screen').toBeLessThan(
+      viewport.height / 2,
+    );
+
+    // And it goes away when nothing is in reach.
+    await page.evaluate(() => window.__survive!.send({ type: 'interact', tileX: 0, tileY: 0 }));
+    await holdKey(page, 'KeyW', 900);
+    await holdKey(page, 'KeyW', 900);
+    if ((await page.evaluate(() => window.__survive!.focusId())) === null) {
+      await expect(label).toBeHidden();
+    }
   });
 });

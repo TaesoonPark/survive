@@ -2,8 +2,15 @@ import Phaser from 'phaser';
 import type { Command, PlayerState } from '@survive/protocol';
 import type { GameData } from '@survive/game-data';
 import { Hud } from '../ui/hud';
-import { el, injectUiStyles, worldTooltip } from '../ui/kit';
-import { destroyTooltip, hideTooltip, showTooltip } from '../ui/tooltip';
+import { el, entityName, injectUiStyles, worldTooltip } from '../ui/kit';
+import {
+  destroyTooltip,
+  hideFocusLabel,
+  hideTooltip,
+  pruneTooltip,
+  showFocusLabel,
+  showTooltip,
+} from '../ui/tooltip';
 import type { DragState, DropTarget, Panel, UiContext } from '../ui/panel';
 import { createPanels } from '../ui/panels';
 import type { GameScene } from './GameScene';
@@ -216,6 +223,23 @@ export class UiScene extends Phaser.Scene {
     for (const id of this.openIds) this.panels.get(id)?.update?.(this.ctx);
 
     this.updateWorldTooltip(self);
+    this.updateFocusLabel();
+  }
+
+  /**
+   * The name of whatever the interact key is aimed at, over the interaction ring.
+   *
+   * The ring already says *that* something is targeted; standing in a thicket it does not
+   * say which bush. Independent of the hover tooltip, and both can be up at once - the
+   * cursor is usually not pointing at the thing the player is standing next to.
+   */
+  private updateFocusLabel(): void {
+    const focus = this.world.focusLabelTarget();
+    if (!focus) {
+      hideFocusLabel();
+      return;
+    }
+    showFocusLabel(entityName(focus.snapshot, this.ctx.data), focus.screenX, focus.screenY);
   }
 
   /**
@@ -230,6 +254,9 @@ export class UiScene extends Phaser.Scene {
    * takes it over cleanly and the two do not fight for it every frame.
    */
   private updateWorldTooltip(self: PlayerState | null): void {
+    // A tooltip whose element has been removed - a panel closed under the cursor - would
+    // otherwise sit there for good, because the cursor never leaves what is no longer there.
+    pruneTooltip();
     const hover = this.world.hoverTarget();
     const text = hover ? worldTooltip(hover.snapshot, this.ctx.data, self) : null;
     if (!hover || !text) {
