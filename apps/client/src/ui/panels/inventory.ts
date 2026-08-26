@@ -235,6 +235,15 @@ function hotbarBadges(player: PlayerState): Map<number, string> {
   return badges;
 }
 
+/**
+ * Inventory slot the cursor is resting on, or null.
+ *
+ * Module state because the panel is a singleton and the alternative - threading a hover
+ * index out through the `Panel` contract - would exist only for this. Cleared on unmount so
+ * a stale index cannot outlive the panel that produced it.
+ */
+let hoveredInventorySlot: number | null = null;
+
 export function createInventoryPanel(): Panel {
   /** Set once the panel is mounted; the context menu is parented to it. */
   let rootNode: HTMLDivElement | null = null;
@@ -547,6 +556,19 @@ export function createInventoryPanel(): Panel {
     });
     if (stack) attachTooltip(node, () => itemTooltip(stack, ctx.data));
 
+    // Remember what the cursor is over, so a number key can bind *this* slot. Only the
+    // player's own inventory: a hotbar entry is an index into that and nothing else, so
+    // hovering a chest slot must not silently bind the same index in the pack.
+    if (options.ref.kind === 'inventory') {
+      const slot = options.index;
+      node.addEventListener('pointerenter', () => {
+        hoveredInventorySlot = slot;
+      });
+      node.addEventListener('pointerleave', () => {
+        if (hoveredInventorySlot === slot) hoveredInventorySlot = null;
+      });
+    }
+
     // Empty slots are still drop targets - that is how a player makes room.
     bindDropTarget(node, ctx, options.ref, options.index);
 
@@ -829,6 +851,31 @@ export function createInventoryPanel(): Panel {
       rootNode = null;
       contentSignature = '';
       footerSignature = '';
+      hoveredInventorySlot = null;
+    },
+
+    /**
+     * A number key while the cursor rests on a slot binds that slot to the key.
+     *
+     * The other way to do it is dragging the item onto the bar; this is the same act with
+     * one hand. Hovering an *empty* slot clears the binding instead, which is the only way
+     * to unbind a key without putting something else there - and `assignHotbar` already
+     * takes a null slot for exactly that.
+     *
+     * Returns false when the cursor is over nothing, letting the digit fall through to its
+     * usual meaning of selecting a slot.
+     */
+    hotbarDigit(ctx: UiContext, index: number): boolean {
+      if (hoveredInventorySlot === null) return false;
+      const player = ctx.session.self;
+      if (!player) return false;
+      const occupied = player.inventory.slots[hoveredInventorySlot] ?? null;
+      ctx.send({
+        type: 'assignHotbar',
+        hotbarIndex: index,
+        inventorySlot: occupied ? hoveredInventorySlot : null,
+      });
+      return true;
     },
   };
 }

@@ -33,6 +33,14 @@ export interface SurviveDebugHook {
     tileY: number;
     inventoryCount: number;
     heldDefId: string | null;
+    /**
+     * Hotbar bindings: an inventory slot index per key, or null for an unbound key.
+     *
+     * Exposed because the bar cannot be read off the screen reliably - an empty cell looks
+     * the same whether the key is unbound or points at a slot that has been emptied.
+     */
+    hotbar: (number | null)[];
+    activeHotbar: number;
   } | null;
   /** The locally predicted position: the latest fixed-step rung. */
   predicted(): { x: number; y: number };
@@ -148,6 +156,8 @@ export function installDebugHook(
         alive: self.alive,
         tileX: Math.floor(self.x / 32),
         tileY: Math.floor(self.y / 32),
+        hotbar: [...self.hotbar],
+        activeHotbar: self.activeHotbar,
         inventoryCount: self.inventory.slots.filter((slot) => slot !== null).length,
         heldDefId: self.equipment.mainHand?.defId ?? null,
       };

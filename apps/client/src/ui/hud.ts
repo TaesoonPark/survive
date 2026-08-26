@@ -17,6 +17,36 @@ import { attachTooltip } from './tooltip';
 import type { UiContext } from './panel';
 
 /**
+ * Let a hotbar cell accept a dragged inventory item, binding the key to that slot.
+ *
+ * Nothing moves: a hotbar entry is a pointer into the inventory, so this is assignment, not
+ * a transfer. Only an inventory drag is accepted - a stack dragged out of a chest has no
+ * inventory slot to point at, and silently binding the wrong thing would be worse than
+ * refusing, so the cell simply does not light up.
+ */
+function bindHotbarDropTarget(node: HTMLElement, ctx: UiContext, index: number): void {
+  const eligible = (): boolean => ctx.drag?.from.kind === 'inventory';
+  node.addEventListener('dragover', (event: DragEvent) => {
+    if (!eligible()) return;
+    // Without preventDefault the browser never fires `drop`.
+    event.preventDefault();
+    // Must match the source's `effectAllowed`. Asking for `link` - which is what this
+    // drop really is, a binding rather than a move - makes the browser refuse the drop
+    // outright and fire nothing at all.
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    node.classList.add('slot--drop');
+  });
+  node.addEventListener('dragleave', () => node.classList.remove('slot--drop'));
+  node.addEventListener('drop', (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    node.classList.remove('slot--drop');
+    if (!eligible()) return;
+    ctx.endDrag({ to: 'hotbar', index });
+  });
+}
+
+/**
  * The heads-up display.
  *
  * Always visible, and deliberately restrained: vitals bottom-left, hotbar bottom-centre,
@@ -122,6 +152,7 @@ export class Hud {
       });
       if (stack) attachTooltip(node, () => itemTooltip(stack, ctx.data));
       node.addEventListener('click', () => ctx.send({ type: 'selectHotbar', index }));
+      bindHotbarDropTarget(node, ctx, index);
       return node;
     });
 
@@ -135,7 +166,7 @@ export class Hud {
       badge: t('hotbar.hand'),
       selected: true,
     });
-    if (held) heldSlot.title = itemTooltip(held, ctx.data);
+    if (held) attachTooltip(heldSlot, () => itemTooltip(held, ctx.data));
 
     this.hotbar.replaceChildren(...slots, heldSlot);
   }

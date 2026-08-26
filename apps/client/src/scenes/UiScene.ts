@@ -182,6 +182,17 @@ export class UiScene extends Phaser.Scene {
       });
       return;
     }
+    if (target.to === 'hotbar') {
+      // Binding a key, not moving an item: the stack stays exactly where it is. Only an
+      // inventory slot can be bound, because that is all a hotbar entry can point at.
+      if (drag.from.kind !== 'inventory') return;
+      this.world.session.send({
+        type: 'assignHotbar',
+        hotbarIndex: target.index,
+        inventorySlot: drag.index,
+      });
+      return;
+    }
     this.world.session.send({
       type: 'moveItem',
       from: drag.from,
@@ -190,6 +201,20 @@ export class UiScene extends Phaser.Scene {
       toIndex: target.index,
       count: drag.count,
     });
+  }
+
+  /**
+   * Offer a number key to the open panels before the world acts on it.
+   *
+   * The world's meaning for a digit is "select this hotbar slot". A panel can claim it for
+   * something else - the inventory assigns the item under the cursor - and the first one to
+   * claim it wins.
+   */
+  claimHotbarDigit(index: number): boolean {
+    for (const id of this.openIds) {
+      if (this.panels.get(id)?.hotbarDigit?.(this.ctx, index)) return true;
+    }
+    return false;
   }
 
   override update(): void {

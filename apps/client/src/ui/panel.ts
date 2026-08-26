@@ -46,12 +46,20 @@ export interface DragState {
   defId: string;
 }
 
-/** Where a dragged stack is being dropped. */
-export interface DropTarget {
-  to: ContainerRef;
-  /** Target slot, or null to let the server auto-place it. */
-  index: number | null;
-}
+/**
+ * Where a dragged stack is being dropped.
+ *
+ * The hotbar is a separate case rather than another `ContainerRef`, because dropping there
+ * does not *move* anything: a hotbar slot is a pointer into the inventory, so the drop binds
+ * a key to a slot and leaves the item where it is.
+ */
+export type DropTarget =
+  | {
+      to: ContainerRef;
+      /** Target slot, or null to let the server auto-place it. */
+      index: number | null;
+    }
+  | { to: 'hotbar'; index: number };
 
 export interface Panel {
   readonly id: string;
@@ -68,4 +76,12 @@ export interface Panel {
   update?(ctx: UiContext): void;
   /** Called when the panel closes. */
   unmount?(): void;
+  /**
+   * Offered a number key before the world sees it. Return true to consume it.
+   *
+   * The digits normally select a hotbar slot. With the inventory open and the cursor over an
+   * item, the same key should *assign* that item instead - it is the gesture every game of
+   * this kind uses, and the alternative was that the hotbar could not be filled at all.
+   */
+  hotbarDigit?(ctx: UiContext, index: number): boolean;
 }

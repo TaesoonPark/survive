@@ -536,6 +536,12 @@ export class GameScene extends Phaser.Scene {
     return { snapshot, screenX: this.pointerScreenX, screenY: this.pointerScreenY };
   }
 
+  /** Ask the UI scene whether a panel wants this number key. */
+  private claimHotbarDigit(index: number): boolean {
+    const ui = this.scene.get('Ui') as { claimHotbarDigit?: (index: number) => boolean } | null;
+    return ui?.claimHotbarDigit?.(index) ?? false;
+  }
+
   private isInteractable(snapshot: EntitySnapshot): boolean {
     switch (snapshot.k) {
       case 'item':
@@ -645,7 +651,12 @@ export class GameScene extends Phaser.Scene {
           this.session.send({ type: 'reload' });
           break;
         case 'selectHotbar':
-          this.session.send({ type: 'selectHotbar', index: action.index });
+          // Offered to the interface first. With the inventory open and the cursor on an
+          // item, the same key assigns that item to the slot instead of selecting it -
+          // which is the only way to fill the bar.
+          if (!this.claimHotbarDigit(action.index)) {
+            this.session.send({ type: 'selectHotbar', index: action.index });
+          }
           break;
         case 'cycleHotbar': {
           if (!self) break;
