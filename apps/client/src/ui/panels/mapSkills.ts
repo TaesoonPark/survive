@@ -21,7 +21,8 @@ import {
   shade,
   tilePaint,
 } from '../../art/palette';
-import { button, el, humanize, panelFrame } from '../kit';
+import { button, el, panelFrame } from '../kit';
+import { t } from '../strings';
 import type { Panel, UiContext } from '../panel';
 
 /**
@@ -628,7 +629,7 @@ export function createMapPanel(): Panel {
 
   return {
     id: 'map',
-    title: 'Map',
+    title: t('panel.map'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {
@@ -834,7 +835,7 @@ function skillRow(skill: SkillId, level: number, xp: number): HTMLLIElement {
       el('div', {
         className: 'skill-head',
         children: [
-          el('span', { className: 'skill-name', text: humanize(skill) }),
+          el('span', { className: 'skill-name', text: t(`skill.${skill}`) }),
           el('span', {
             className: 'skill-level',
             attrs: { 'data-testid': `skill-level-${skill}` },
@@ -911,7 +912,7 @@ export function createSkillsPanel(): Panel {
 
   return {
     id: 'skills',
-    title: 'Skills',
+    title: t('panel.skills'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {

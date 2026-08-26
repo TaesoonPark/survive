@@ -8,6 +8,7 @@ import {
 import type { ItemDef } from '@survive/game-data';
 import { UI, cssColor } from '../../art/palette';
 import { button, el, humanize, itemSlot, itemTooltip, panelFrame, statBar } from '../kit';
+import { t } from '../strings';
 import { attachTooltip } from '../tooltip';
 import type { Panel, UiContext } from '../panel';
 
@@ -746,7 +747,7 @@ export function createInventoryPanel(): Panel {
 
   return {
     id: 'inventory',
-    title: 'Inventory',
+    title: t('panel.inventory'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {

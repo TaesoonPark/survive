@@ -1,4 +1,4 @@
-import type { RecipeDef, RecipeInput, RecipeOutput } from '../types';
+import type { RecipeInput, RecipeOutput, RecipeSource } from '../types';
 import { seconds } from './units';
 
 /**
@@ -26,10 +26,10 @@ import { seconds } from './units';
  * smelts at 600 each.
  */
 
-type RecipeSpec = Pick<RecipeDef, 'id' | 'name' | 'category' | 'inputs' | 'outputs'> &
-  Partial<RecipeDef>;
+type RecipeSpec = Pick<RecipeSource, 'id' | 'category' | 'inputs' | 'outputs'> &
+  Partial<RecipeSource>;
 
-function recipe(spec: RecipeSpec): RecipeDef {
+function recipe(spec: RecipeSpec): RecipeSource {
   return {
     tools: [],
     craftTicks: seconds(3),
@@ -53,10 +53,9 @@ function out(defId: string, count = 1, chance?: number): RecipeOutput {
 // Tier 0: bare hands
 // ---------------------------------------------------------------------------
 
-const HAND_RECIPES: RecipeDef[] = [
+const HAND_RECIPES: RecipeSource[] = [
   recipe({
     id: 'craft_rope',
-    name: 'Rope',
     category: 'basic',
     inputs: [inp('plant_fiber', 5)],
     outputs: [out('rope', 1)],
@@ -65,7 +64,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_stick',
-    name: 'Sticks',
     category: 'basic',
     inputs: [inp('wood_log', 1)],
     outputs: [out('stick', 4)],
@@ -74,7 +72,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_cloth_rag',
-    name: 'Cloth Rag',
     category: 'textiles',
     inputs: [inp('plant_fiber', 5)],
     outputs: [out('cloth_rag', 1)],
@@ -83,7 +80,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_rag_from_cloth',
-    name: 'Tear Cloth Into Rags',
     category: 'textiles',
     inputs: [inp('cloth', 1)],
     outputs: [out('cloth_rag', 3)],
@@ -92,7 +88,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_stone_hatchet',
-    name: 'Stone Hatchet',
     category: 'tools',
     inputs: [inp('stone', 1), inp('stick', 1), inp('plant_fiber', 3)],
     outputs: [out('stone_hatchet', 1)],
@@ -101,7 +96,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_stone_pickaxe',
-    name: 'Stone Pickaxe',
     category: 'tools',
     inputs: [inp('stone', 2), inp('stick', 1), inp('plant_fiber', 3)],
     outputs: [out('stone_pickaxe', 1)],
@@ -110,7 +104,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_stone_knife',
-    name: 'Stone Knife',
     category: 'tools',
     inputs: [inp('flint', 1), inp('stick', 1), inp('plant_fiber', 2)],
     outputs: [out('stone_knife', 1)],
@@ -119,7 +112,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_torch',
-    name: 'Torch',
     category: 'basic',
     inputs: [inp('stick', 1), inp('plant_fiber', 2), inp('resin', 1)],
     outputs: [out('torch', 1)],
@@ -128,7 +120,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_campfire_kit',
-    name: 'Campfire Kit',
     category: 'building',
     inputs: [inp('stick', 5), inp('stone', 4), inp('plant_fiber', 3)],
     outputs: [out('campfire_kit', 1)],
@@ -137,7 +128,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_workbench_kit',
-    name: 'Workbench Kit',
     category: 'building',
     inputs: [inp('wood_log', 5), inp('stick', 6), inp('rope', 2)],
     outputs: [out('workbench_kit', 1)],
@@ -146,7 +136,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_bandage_dirty',
-    name: 'Dirty Bandage',
     category: 'medical',
     inputs: [inp('cloth_rag', 1)],
     outputs: [out('bandage_dirty', 2)],
@@ -155,7 +144,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_splint_wood',
-    name: 'Wooden Splint',
     category: 'medical',
     inputs: [inp('stick', 2), inp('cloth_rag', 1)],
     outputs: [out('splint_wood', 1)],
@@ -164,7 +152,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_disinfected_rag',
-    name: 'Disinfected Rag',
     category: 'medical',
     inputs: [inp('cloth_rag', 2), inp('antiseptic', 1)],
     outputs: [out('disinfected_rag', 2)],
@@ -173,7 +160,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_spear',
-    name: 'Spear',
     category: 'weapons',
     inputs: [inp('stick', 2), inp('flint', 1), inp('plant_fiber', 3)],
     outputs: [out('spear', 1)],
@@ -182,7 +168,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_wooden_club',
-    name: 'Wooden Club',
     category: 'weapons',
     inputs: [inp('wood_log', 1)],
     outputs: [out('wooden_club', 1)],
@@ -191,7 +176,6 @@ const HAND_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_throwing_rock',
-    name: 'Throwing Rocks',
     category: 'weapons',
     inputs: [inp('stone', 1)],
     outputs: [out('throwing_rock', 2)],
@@ -204,10 +188,9 @@ const HAND_RECIPES: RecipeDef[] = [
 // Workbench
 // ---------------------------------------------------------------------------
 
-const WORKBENCH_RECIPES: RecipeDef[] = [
+const WORKBENCH_RECIPES: RecipeSource[] = [
   recipe({
     id: 'craft_wood_plank',
-    name: 'Wood Planks',
     category: 'basic',
     inputs: [inp('wood_log', 1)],
     tools: ['saw'],
@@ -218,7 +201,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_stone_block',
-    name: 'Stone Block',
     category: 'building',
     inputs: [inp('stone', 4)],
     tools: ['pickaxe'],
@@ -229,7 +211,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_nail',
-    name: 'Nails',
     category: 'basic',
     inputs: [inp('scrap_metal', 1)],
     tools: ['hammer'],
@@ -240,7 +221,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_wire',
-    name: 'Wire',
     category: 'basic',
     inputs: [inp('copper_ingot', 1)],
     tools: ['hammer'],
@@ -251,7 +231,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_hammer',
-    name: 'Hammer',
     category: 'tools',
     inputs: [inp('iron_ingot', 1), inp('stick', 1)],
     outputs: [out('hammer', 1)],
@@ -262,7 +241,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_saw',
-    name: 'Saw',
     category: 'tools',
     inputs: [inp('iron_ingot', 2), inp('stick', 2)],
     outputs: [out('saw', 1)],
@@ -273,7 +251,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_iron_axe',
-    name: 'Iron Axe',
     category: 'tools',
     inputs: [inp('iron_ingot', 2), inp('wood_plank', 1), inp('rope', 1)],
     tools: ['hammer'],
@@ -285,7 +262,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_iron_pickaxe',
-    name: 'Iron Pickaxe',
     category: 'tools',
     inputs: [inp('iron_ingot', 3), inp('wood_plank', 1), inp('rope', 1)],
     tools: ['hammer'],
@@ -297,7 +273,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_iron_knife',
-    name: 'Iron Knife',
     category: 'tools',
     inputs: [inp('iron_ingot', 1), inp('leather', 1)],
     tools: ['hammer'],
@@ -309,7 +284,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_shovel',
-    name: 'Shovel',
     category: 'tools',
     inputs: [inp('iron_ingot', 2), inp('stick', 2)],
     tools: ['hammer'],
@@ -321,7 +295,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_hoe',
-    name: 'Hoe',
     category: 'tools',
     inputs: [inp('iron_ingot', 1), inp('stick', 2)],
     tools: ['hammer'],
@@ -332,7 +305,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_sickle',
-    name: 'Sickle',
     category: 'tools',
     inputs: [inp('iron_ingot', 1), inp('stick', 1), inp('leather', 1)],
     tools: ['hammer'],
@@ -343,7 +315,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_wrench',
-    name: 'Wrench',
     category: 'tools',
     inputs: [inp('iron_ingot', 2)],
     tools: ['hammer'],
@@ -355,7 +326,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_watering_can',
-    name: 'Watering Can',
     category: 'tools',
     inputs: [inp('scrap_metal', 3), inp('wire', 1)],
     tools: ['hammer'],
@@ -366,7 +336,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_fishing_rod',
-    name: 'Fishing Rod',
     category: 'tools',
     inputs: [inp('stick', 2), inp('rope', 1), inp('sinew', 2), inp('nail', 1)],
     outputs: [out('fishing_rod', 1)],
@@ -376,7 +345,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_nail_bat',
-    name: 'Nail Bat',
     category: 'weapons',
     inputs: [inp('wooden_club', 1), inp('nail', 10)],
     tools: ['hammer'],
@@ -388,7 +356,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_sledgehammer',
-    name: 'Sledgehammer',
     category: 'weapons',
     inputs: [inp('iron_ingot', 4), inp('wood_plank', 1), inp('rope', 1)],
     tools: ['hammer'],
@@ -400,7 +367,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_pitchfork',
-    name: 'Pitchfork',
     category: 'weapons',
     inputs: [inp('iron_ingot', 2), inp('stick', 2), inp('rope', 1)],
     tools: ['hammer'],
@@ -412,7 +378,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_hunting_bow',
-    name: 'Hunting Bow',
     category: 'weapons',
     inputs: [inp('stick', 3), inp('rope', 1), inp('sinew', 3)],
     tools: ['knife'],
@@ -424,7 +389,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_arrow_wooden',
-    name: 'Wooden Arrows',
     category: 'ammo',
     inputs: [inp('stick', 3), inp('feather', 3), inp('flint', 2)],
     tools: ['knife'],
@@ -435,7 +399,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_arrow_iron',
-    name: 'Iron Arrows',
     category: 'ammo',
     inputs: [inp('stick', 3), inp('feather', 3), inp('iron_ingot', 1)],
     tools: ['knife'],
@@ -447,7 +410,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_crossbow',
-    name: 'Crossbow',
     category: 'weapons',
     inputs: [inp('wood_plank', 3), inp('iron_ingot', 2), inp('rope', 1), inp('wire', 2)],
     tools: ['hammer', 'saw'],
@@ -460,7 +422,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_bolt',
-    name: 'Crossbow Bolts',
     category: 'ammo',
     inputs: [inp('wood_plank', 1), inp('iron_ingot', 1), inp('feather', 2)],
     tools: ['knife'],
@@ -472,7 +433,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_splint_medical',
-    name: 'Medical Splint',
     category: 'medical',
     inputs: [inp('wood_plank', 1), inp('cloth', 2), inp('duct_tape', 1)],
     outputs: [out('splint_medical', 1)],
@@ -483,7 +443,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_suture_kit',
-    name: 'Suture Kit',
     category: 'medical',
     inputs: [inp('sinew', 3), inp('wire', 1), inp('antiseptic', 1), inp('cloth', 1)],
     outputs: [out('suture_kit', 1)],
@@ -494,7 +453,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_lockpick',
-    name: 'Lockpick',
     category: 'tools',
     inputs: [inp('wire', 2), inp('scrap_metal', 1)],
     outputs: [out('lockpick', 1)],
@@ -505,7 +463,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_lantern',
-    name: 'Lantern',
     category: 'building',
     inputs: [inp('scrap_metal', 2), inp('glass', 1), inp('wire', 1), inp('resin', 2)],
     tools: ['hammer'],
@@ -517,7 +474,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_storage_box_kit',
-    name: 'Storage Box Kit',
     category: 'building',
     inputs: [inp('wood_plank', 6), inp('nail', 8)],
     tools: ['hammer', 'saw'],
@@ -528,7 +484,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_bed_kit',
-    name: 'Bed Kit',
     category: 'building',
     inputs: [inp('wood_plank', 8), inp('cloth', 4), inp('nail', 12)],
     tools: ['hammer', 'saw'],
@@ -540,7 +495,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_furnace_kit',
-    name: 'Furnace Kit',
     category: 'building',
     inputs: [inp('stone_block', 10), inp('clay', 8)],
     outputs: [out('furnace_kit', 1)],
@@ -551,7 +505,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_anvil_kit',
-    name: 'Anvil Kit',
     category: 'building',
     inputs: [inp('iron_ingot', 8), inp('stone_block', 2)],
     tools: ['hammer'],
@@ -563,7 +516,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_loom_kit',
-    name: 'Loom Kit',
     category: 'building',
     inputs: [inp('wood_plank', 8), inp('stick', 4), inp('rope', 3)],
     tools: ['saw'],
@@ -575,7 +527,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_cooking_pot_kit',
-    name: 'Cooking Pot',
     category: 'building',
     inputs: [inp('iron_ingot', 3), inp('stick', 3), inp('wire', 1)],
     tools: ['hammer'],
@@ -587,7 +538,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_grindstone_kit',
-    name: 'Grindstone Kit',
     category: 'building',
     inputs: [inp('stone_block', 4), inp('wood_plank', 2), inp('iron_ingot', 1)],
     tools: ['hammer'],
@@ -599,7 +549,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_water_barrel_kit',
-    name: 'Water Barrel Kit',
     category: 'building',
     inputs: [inp('wood_plank', 8), inp('nail', 6), inp('resin', 3)],
     tools: ['hammer', 'saw'],
@@ -611,7 +560,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_farm_plot_kit',
-    name: 'Farm Plot Kit',
     category: 'farming',
     inputs: [inp('wood_plank', 4), inp('rope', 2)],
     outputs: [out('farm_plot_kit', 1)],
@@ -621,7 +569,6 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'craft_chemistry_bench_kit',
-    name: 'Chemistry Bench Kit',
     category: 'building',
     // The fired brick is what makes `fire_clay_brick` worth its fuel: the bench runs a
     // burner, and a burner needs a lining that does not spall. Both this and the glass
@@ -646,10 +593,9 @@ const WORKBENCH_RECIPES: RecipeDef[] = [
 // Furnace (smelting)
 // ---------------------------------------------------------------------------
 
-const FURNACE_RECIPES: RecipeDef[] = [
+const FURNACE_RECIPES: RecipeSource[] = [
   recipe({
     id: 'smelt_charcoal',
-    name: 'Charcoal',
     category: 'smelting',
     inputs: [inp('wood_log', 3)],
     outputs: [out('charcoal', 4)],
@@ -661,7 +607,6 @@ const FURNACE_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'smelt_iron_ingot',
-    name: 'Iron Ingot',
     category: 'smelting',
     inputs: [inp('iron_ore', 2)],
     outputs: [out('iron_ingot', 1)],
@@ -673,7 +618,6 @@ const FURNACE_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'smelt_scrap_to_iron',
-    name: 'Re-smelt Scrap',
     category: 'smelting',
     inputs: [inp('scrap_metal', 3)],
     outputs: [out('iron_ingot', 1)],
@@ -685,7 +629,6 @@ const FURNACE_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'smelt_copper_ingot',
-    name: 'Copper Ingot',
     category: 'smelting',
     inputs: [inp('copper_ore', 2)],
     outputs: [out('copper_ingot', 1)],
@@ -697,7 +640,6 @@ const FURNACE_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'smelt_glass',
-    name: 'Glass Pane',
     category: 'smelting',
     inputs: [inp('sand', 3)],
     outputs: [out('glass', 1)],
@@ -709,7 +651,6 @@ const FURNACE_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'smelt_glass_from_shards',
-    name: 'Recast Glass',
     category: 'smelting',
     inputs: [inp('glass_shard', 5)],
     outputs: [out('glass', 1)],
@@ -721,7 +662,6 @@ const FURNACE_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'fire_clay_brick',
-    name: 'Clay Brick',
     category: 'smelting',
     inputs: [inp('clay', 2)],
     outputs: [out('clay_brick', 2)],
@@ -733,7 +673,6 @@ const FURNACE_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'smelt_steel_ingot',
-    name: 'Steel Ingot',
     category: 'smelting',
     inputs: [inp('iron_ingot', 2), inp('charcoal', 3)],
     outputs: [out('steel_ingot', 1)],
@@ -751,10 +690,9 @@ const FURNACE_RECIPES: RecipeDef[] = [
 // Anvil (forging)
 // ---------------------------------------------------------------------------
 
-const ANVIL_RECIPES: RecipeDef[] = [
+const ANVIL_RECIPES: RecipeSource[] = [
   recipe({
     id: 'forge_iron_sword',
-    name: 'Iron Sword',
     category: 'weapons',
     inputs: [inp('iron_ingot', 4), inp('leather', 2), inp('wood_plank', 1)],
     tools: ['hammer'],
@@ -766,7 +704,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_machete',
-    name: 'Machete',
     category: 'weapons',
     inputs: [inp('iron_ingot', 2), inp('leather', 1)],
     tools: ['hammer'],
@@ -778,7 +715,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_crowbar',
-    name: 'Crowbar',
     category: 'tools',
     inputs: [inp('iron_ingot', 3)],
     tools: ['hammer'],
@@ -790,7 +726,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_steel_axe',
-    name: 'Steel Axe',
     category: 'tools',
     inputs: [inp('steel_ingot', 3), inp('wood_plank', 1), inp('leather', 1)],
     tools: ['hammer'],
@@ -803,7 +738,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_steel_pickaxe',
-    name: 'Steel Pickaxe',
     category: 'tools',
     inputs: [inp('steel_ingot', 3), inp('wood_plank', 1), inp('leather', 1)],
     tools: ['hammer'],
@@ -816,7 +750,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_ammo_casing',
-    name: 'Cartridge Casings',
     category: 'ammo',
     inputs: [inp('copper_ingot', 1)],
     tools: ['hammer'],
@@ -828,7 +761,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_ammo_9mm',
-    name: '9mm Rounds',
     category: 'ammo',
     inputs: [inp('ammo_casing', 8), inp('gunpowder', 2), inp('scrap_metal', 1)],
     outputs: [out('ammo_9mm', 8)],
@@ -840,7 +772,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_ammo_308',
-    name: '.308 Rounds',
     category: 'ammo',
     inputs: [inp('ammo_casing', 6), inp('gunpowder', 3), inp('scrap_metal', 2)],
     outputs: [out('ammo_308', 6)],
@@ -852,7 +783,6 @@ const ANVIL_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'forge_ammo_shell',
-    name: 'Shotgun Shells',
     category: 'ammo',
     inputs: [inp('ammo_casing', 6), inp('gunpowder', 3), inp('scrap_metal', 2), inp('plastic', 2)],
     outputs: [out('ammo_shell', 6)],
@@ -868,10 +798,9 @@ const ANVIL_RECIPES: RecipeDef[] = [
 // Cooking: campfire, cooking pot, grindstone
 // ---------------------------------------------------------------------------
 
-const COOKING_RECIPES: RecipeDef[] = [
+const COOKING_RECIPES: RecipeSource[] = [
   recipe({
     id: 'cook_meat',
-    name: 'Cooked Meat',
     category: 'cooking',
     inputs: [inp('raw_meat', 1)],
     outputs: [out('cooked_meat', 1)],
@@ -883,7 +812,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'cook_fish',
-    name: 'Cooked Fish',
     category: 'cooking',
     inputs: [inp('raw_fish', 1)],
     outputs: [out('cooked_fish', 1)],
@@ -895,7 +823,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'bake_potato',
-    name: 'Baked Potato',
     category: 'cooking',
     inputs: [inp('potato', 1)],
     outputs: [out('baked_potato', 1)],
@@ -907,7 +834,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'boil_water',
-    name: 'Boil Water',
     category: 'cooking',
     inputs: [inp('water_dirty', 1)],
     outputs: [out('water_clean', 1)],
@@ -919,7 +845,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'bake_bread',
-    name: 'Bread',
     category: 'cooking',
     inputs: [inp('dough', 1)],
     outputs: [out('bread', 1)],
@@ -932,7 +857,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_jerky',
-    name: 'Jerky',
     category: 'cooking',
     inputs: [inp('raw_meat', 2)],
     tools: ['knife'],
@@ -946,7 +870,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_dough',
-    name: 'Dough',
     category: 'cooking',
     inputs: [inp('flour', 2), inp('water_clean', 1)],
     outputs: [out('dough', 2)],
@@ -956,7 +879,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'cook_soup_vegetable',
-    name: 'Vegetable Soup',
     category: 'cooking',
     inputs: [inp('carrot', 2), inp('cabbage', 1), inp('potato', 1), inp('water_clean', 2)],
     outputs: [out('soup_vegetable', 2)],
@@ -969,7 +891,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'cook_stew_meat',
-    name: 'Meat Stew',
     category: 'cooking',
     inputs: [inp('raw_meat', 2), inp('carrot', 2), inp('onion', 1), inp('water_clean', 2)],
     outputs: [out('stew_meat', 2)],
@@ -982,7 +903,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'brew_tea_herbal',
-    name: 'Herbal Tea',
     category: 'cooking',
     inputs: [inp('herb', 2), inp('water_clean', 1)],
     outputs: [out('tea_herbal', 2)],
@@ -994,7 +914,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'boil_water_batch',
-    name: 'Boil Water (Batch)',
     category: 'cooking',
     inputs: [inp('water_dirty', 4)],
     outputs: [out('water_clean', 4)],
@@ -1006,7 +925,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'mill_flour',
-    name: 'Flour',
     category: 'cooking',
     inputs: [inp('wheat', 3)],
     outputs: [out('flour', 2)],
@@ -1016,7 +934,6 @@ const COOKING_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'mill_bone_meal',
-    name: 'Bone Meal',
     category: 'farming',
     inputs: [inp('bone', 3)],
     outputs: [out('fertilizer', 2)],
@@ -1030,10 +947,9 @@ const COOKING_RECIPES: RecipeDef[] = [
 // Chemistry
 // ---------------------------------------------------------------------------
 
-const CHEMISTRY_RECIPES: RecipeDef[] = [
+const CHEMISTRY_RECIPES: RecipeSource[] = [
   recipe({
     id: 'distill_moonshine',
-    name: 'Moonshine (Fruit)',
     category: 'cooking',
     inputs: [inp('berry', 8), inp('water_clean', 2)],
     outputs: [out('alcohol_moonshine', 2)],
@@ -1046,7 +962,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'distill_moonshine_corn',
-    name: 'Moonshine (Corn)',
     category: 'cooking',
     inputs: [inp('corn', 4), inp('water_clean', 2)],
     outputs: [out('alcohol_moonshine', 3)],
@@ -1059,7 +974,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_antiseptic',
-    name: 'Antiseptic',
     category: 'medical',
     inputs: [inp('herb', 3), inp('alcohol_moonshine', 1)],
     outputs: [out('antiseptic', 2)],
@@ -1070,7 +984,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_bandage_sterile',
-    name: 'Sterile Dressing',
     category: 'medical',
     inputs: [inp('bandage_clean', 2), inp('antiseptic', 1)],
     outputs: [out('bandage_sterile', 2)],
@@ -1081,7 +994,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_antibiotics',
-    name: 'Antibiotics',
     category: 'medical',
     inputs: [inp('mushroom', 4), inp('herb', 3), inp('water_clean', 2), inp('glass', 1)],
     outputs: [out('antibiotics', 2)],
@@ -1093,7 +1005,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_first_aid_kit',
-    name: 'First Aid Kit',
     category: 'medical',
     inputs: [
       inp('bandage_sterile', 2),
@@ -1110,7 +1021,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_painkiller',
-    name: 'Painkillers',
     category: 'medical',
     inputs: [inp('herb', 4), inp('bark', 4)],
     outputs: [out('painkiller', 2)],
@@ -1121,7 +1031,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_gunpowder',
-    name: 'Gunpowder',
     category: 'ammo',
     inputs: [inp('charcoal', 3), inp('coal', 1), inp('bone', 2)],
     outputs: [out('gunpowder', 2)],
@@ -1132,7 +1041,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_molotov',
-    name: 'Molotov Cocktail',
     category: 'weapons',
     inputs: [inp('glass', 1), inp('cloth_rag', 1), inp('alcohol_moonshine', 1)],
     outputs: [out('molotov', 1)],
@@ -1143,7 +1051,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_compost',
-    name: 'Compost',
     category: 'farming',
     inputs: [inp('plant_fiber', 10), inp('mushroom', 2), inp('water_dirty', 1)],
     outputs: [out('compost', 2)],
@@ -1153,7 +1060,6 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_fertilizer',
-    name: 'Fertilizer',
     category: 'farming',
     inputs: [inp('compost', 2), inp('bone', 1)],
     outputs: [out('fertilizer', 3)],
@@ -1168,10 +1074,9 @@ const CHEMISTRY_RECIPES: RecipeDef[] = [
 // Loom (textiles and leather)
 // ---------------------------------------------------------------------------
 
-const LOOM_RECIPES: RecipeDef[] = [
+const LOOM_RECIPES: RecipeSource[] = [
   recipe({
     id: 'weave_cloth_fiber',
-    name: 'Cloth (from Fiber)',
     category: 'textiles',
     inputs: [inp('plant_fiber', 8)],
     outputs: [out('cloth', 1)],
@@ -1181,7 +1086,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'weave_cloth_rags',
-    name: 'Cloth (from Rags)',
     category: 'textiles',
     inputs: [inp('cloth_rag', 4)],
     outputs: [out('cloth', 1)],
@@ -1191,7 +1095,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'tan_leather',
-    name: 'Tan Leather',
     category: 'textiles',
     inputs: [inp('hide', 1), inp('bark', 3), inp('water_clean', 1)],
     tools: ['knife'],
@@ -1203,7 +1106,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'make_bandage_clean',
-    name: 'Clean Bandage',
     category: 'medical',
     inputs: [inp('cloth', 1), inp('water_clean', 1)],
     outputs: [out('bandage_clean', 3)],
@@ -1214,7 +1116,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_cloth_shirt',
-    name: 'Cloth Shirt',
     category: 'armor',
     inputs: [inp('cloth', 4), inp('plant_fiber', 4)],
     outputs: [out('cloth_shirt', 1)],
@@ -1224,7 +1125,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_cloth_pants',
-    name: 'Cloth Pants',
     category: 'armor',
     inputs: [inp('cloth', 4), inp('plant_fiber', 4)],
     outputs: [out('cloth_pants', 1)],
@@ -1234,7 +1134,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_leather_cap',
-    name: 'Leather Cap',
     category: 'armor',
     inputs: [inp('leather', 2), inp('cloth', 1)],
     outputs: [out('leather_cap', 1)],
@@ -1245,7 +1144,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_leather_gloves',
-    name: 'Leather Gloves',
     category: 'armor',
     inputs: [inp('leather', 2), inp('sinew', 1)],
     outputs: [out('leather_gloves', 1)],
@@ -1256,7 +1154,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_leather_pants',
-    name: 'Leather Pants',
     category: 'armor',
     inputs: [inp('leather', 6), inp('sinew', 2)],
     outputs: [out('leather_pants', 1)],
@@ -1267,7 +1164,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_leather_jacket',
-    name: 'Leather Jacket',
     category: 'armor',
     inputs: [inp('leather', 8), inp('cloth', 2), inp('sinew', 3)],
     outputs: [out('leather_jacket', 1)],
@@ -1278,7 +1174,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_backpack_small',
-    name: 'Small Backpack',
     category: 'armor',
     inputs: [inp('cloth', 5), inp('rope', 2), inp('leather', 1)],
     outputs: [out('backpack_small', 1)],
@@ -1289,7 +1184,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_backpack_large',
-    name: 'Large Backpack',
     category: 'armor',
     // Rubber is the load-bearing half of a strap that carries 30 kg; it is also the
     // only recipe that consumes it, which is what keeps a tyre wall worth cutting.
@@ -1308,7 +1202,6 @@ const LOOM_RECIPES: RecipeDef[] = [
   }),
   recipe({
     id: 'sew_tool_belt',
-    name: 'Tool Belt',
     category: 'armor',
     inputs: [inp('leather', 3), inp('rope', 1)],
     outputs: [out('tool_belt', 1)],
@@ -1322,7 +1215,7 @@ const LOOM_RECIPES: RecipeDef[] = [
 // ---------------------------------------------------------------------------
 
 /** Every recipe in the game. */
-export const RECIPE_DEFS: readonly RecipeDef[] = [
+export const RECIPE_DEFS: readonly RecipeSource[] = [
   ...HAND_RECIPES,
   ...WORKBENCH_RECIPES,
   ...FURNACE_RECIPES,

@@ -16,6 +16,7 @@ import {
 import { DEFAULT_BINDINGS, type ControlBindings } from '../../input/controls';
 import { UI, cssColor } from '../../art/palette';
 import { button, el, humanize, panelFrame } from '../kit';
+import { t } from '../strings';
 import type { Panel, UiContext } from '../panel';
 
 /**
@@ -493,7 +494,7 @@ export function createChatPanel(): Panel {
 
   return {
     id: 'chat',
-    title: 'Chat',
+    title: t('panel.chat'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {
@@ -688,7 +689,7 @@ export function createDeathPanel(): Panel {
 
   return {
     id: 'death',
-    title: 'You died',
+    title: t('panel.death'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {
@@ -879,7 +880,7 @@ export function createPausePanel(): Panel {
 
   return {
     id: 'pause',
-    title: 'Paused',
+    title: t('panel.paused'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {
@@ -1048,7 +1049,7 @@ export function createDebugPanel(): Panel {
 
   return {
     id: 'debug',
-    title: 'Debug',
+    title: t('panel.debug'),
     captures: false,
 
     mount(ctx: UiContext): HTMLElement {

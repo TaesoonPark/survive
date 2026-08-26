@@ -646,7 +646,10 @@ function handleDebugWeather(
     type: 'notification',
     playerId: player.id,
     severity: 'info',
-    text: `weather set to ${requested} (${intensity.toFixed(2)}) for ${hours}h`,
+    message: {
+      code: 'notify.weatherSet',
+      params: { weather: requested, intensity: intensity.toFixed(2), hours },
+    },
   });
   return true;
 }

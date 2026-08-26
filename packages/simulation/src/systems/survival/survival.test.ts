@@ -151,7 +151,9 @@ describe('needs', () => {
 
     const warnings = sim
       .eventsOf('notification')
-      .filter((event) => event.playerId === player.id && event.text.includes('hungry'));
+      .filter(
+        (event) => event.playerId === player.id && event.message.code === 'notify.need.hunger.warn',
+      );
     expect(warnings).toHaveLength(1);
   });
 
@@ -187,7 +189,9 @@ describe('temperature', () => {
 
     expect(player.temperature).toBeLessThan(HYPOTHERMIA_THRESHOLD);
     expect(player.effects.map((effect) => effect.id)).toContain('hypothermia');
-    expect(sim.eventsOf('notification').some((e) => e.text.includes('Hypothermia'))).toBe(true);
+    expect(sim.eventsOf('notification').some((e) => e.message.code === 'notify.hypothermia')).toBe(
+      true,
+    );
   });
 
   it('is held off by a warm coat', () => {
@@ -331,11 +335,11 @@ describe('bleeding', () => {
     expect(player.blood).toBeGreaterThan(CRITICAL_BLOOD);
     const warnings = sim
       .eventsOf('notification')
-      .filter((event) => event.text.includes('lost a lot of blood'));
+      .filter((event) => event.message.code === 'notify.bloodLossWarn');
     expect(warnings).toHaveLength(1);
-    expect(sim.eventsOf('notification').some((event) => event.text.includes('bleeding out'))).toBe(
-      false,
-    );
+    expect(
+      sim.eventsOf('notification').some((event) => event.message.code === 'notify.bleedingOut'),
+    ).toBe(false);
   });
 
   it('clots a graze on its own but never an arterial bleed', () => {
@@ -538,7 +542,9 @@ describe('pain', () => {
 
     expect(totalPain(player.body)).toBeGreaterThanOrEqual(BLACKOUT_PAIN);
     expect(blackedOut).toBe(true);
-    expect(sim.eventsOf('notification').some((event) => event.text.includes('whites'))).toBe(true);
+    expect(
+      sim.eventsOf('notification').some((event) => event.message.code === 'notify.painBlackout'),
+    ).toBe(true);
   });
 });
 

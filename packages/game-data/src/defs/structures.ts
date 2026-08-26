@@ -1,4 +1,4 @@
-import type { ItemAmount, StructureDef } from '../types';
+import type { ItemAmount, StructureSource } from '../types';
 import { seconds } from './units';
 
 /**
@@ -26,12 +26,12 @@ import { seconds } from './units';
  */
 
 type StructureSpec = Pick<
-  StructureDef,
-  'id' | 'name' | 'description' | 'category' | 'maxHealth' | 'buildTicks' | 'cost' | 'xp'
+  StructureSource,
+  'id' | 'category' | 'maxHealth' | 'buildTicks' | 'cost' | 'xp'
 > &
-  Partial<StructureDef>;
+  Partial<StructureSource>;
 
-function structure(spec: StructureSpec): StructureDef {
+function structure(spec: StructureSpec): StructureSource {
   return {
     width: 1,
     height: 1,
@@ -57,12 +57,10 @@ function cost(...amounts: [string, number][]): ItemAmount[] {
  * Authoring order is build-menu order; `sortOrder` is derived from it at the bottom of
  * the file so inserting a structure never means renumbering the rest.
  */
-const AUTHORED: StructureDef[] = [
+const AUTHORED: StructureSource[] = [
   // --- foundations and floors -------------------------------------------
   structure({
     id: 'foundation_wood',
-    name: 'Wood Foundation',
-    description: 'Logs laid and levelled. Everything else needs something to sit on.',
     category: 'foundation',
     maxHealth: 220,
     buildTicks: seconds(6),
@@ -73,8 +71,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'foundation_stone',
-    name: 'Stone Foundation',
-    description: 'Dressed block bedded in clay. Slow, heavy, and it does not rot.',
     category: 'foundation',
     maxHealth: 700,
     buildTicks: seconds(20),
@@ -86,8 +82,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'floor_wood',
-    name: 'Wood Floor',
-    description: 'Planks over the frame. Keeps the mud out and the noise up.',
     category: 'floor',
     maxHealth: 130,
     buildTicks: seconds(5),
@@ -99,8 +93,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'floor_stone',
-    name: 'Stone Floor',
-    description: 'Flagstones. Silent underfoot, which matters more than it sounds.',
     category: 'floor',
     maxHealth: 420,
     buildTicks: seconds(14),
@@ -115,8 +107,6 @@ const AUTHORED: StructureDef[] = [
   // --- walls ------------------------------------------------------------
   structure({
     id: 'wall_wood_frame',
-    name: 'Wood Frame Wall',
-    description: 'Sticks lashed into a lattice. It blocks a walker and nothing else.',
     category: 'wall',
     maxHealth: 90,
     buildTicks: seconds(5),
@@ -130,8 +120,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'wall_wood',
-    name: 'Wood Wall',
-    description: 'Planked both sides. The standard early wall, and it will not last the month.',
     category: 'wall',
     maxHealth: 260,
     buildTicks: seconds(10),
@@ -146,8 +134,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'wall_stone',
-    name: 'Stone Wall',
-    description: 'Coursed block. Three times the wall for four times the work.',
     category: 'wall',
     maxHealth: 750,
     buildTicks: seconds(28),
@@ -163,8 +149,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'wall_metal',
-    name: 'Metal Wall',
-    description: 'Plate over a welded frame. Brutes bounce off it and that is the point.',
     category: 'wall',
     maxHealth: 1400,
     buildTicks: seconds(40),
@@ -182,8 +166,6 @@ const AUTHORED: StructureDef[] = [
   // --- doors, windows, ways through -------------------------------------
   structure({
     id: 'door_wood',
-    name: 'Wood Door',
-    description: 'A plank door on rope hinges. It closes, which is most of the job.',
     category: 'door',
     maxHealth: 190,
     buildTicks: seconds(10),
@@ -201,8 +183,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'door_reinforced',
-    name: 'Reinforced Door',
-    description: 'Scrap plate bolted over planks, and a bar you can drop.',
     category: 'door',
     maxHealth: 450,
     buildTicks: seconds(20),
@@ -221,8 +201,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'door_metal',
-    name: 'Metal Door',
-    description: 'Steel slab in a steel frame, keyed. The last door you will need to build.',
     category: 'door',
     maxHealth: 950,
     buildTicks: seconds(35),
@@ -241,8 +219,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'window_wood',
-    name: 'Window',
-    description: 'Glass in a frame. You can see them coming, and they can see you.',
     category: 'window',
     maxHealth: 110,
     buildTicks: seconds(8),
@@ -258,8 +234,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'window_barred',
-    name: 'Barred Window',
-    description: 'Reinforcing bar welded across the opening. Light in, arms out.',
     category: 'window',
     maxHealth: 340,
     buildTicks: seconds(16),
@@ -276,8 +250,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'hatch',
-    name: 'Hatch',
-    description: 'A trapdoor in the floor, barred from the far side.',
     category: 'door',
     maxHealth: 230,
     buildTicks: seconds(14),
@@ -296,8 +268,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'stairs_wood',
-    name: 'Wood Stairs',
-    description: 'Six treads and a stringer. Gets you onto the roof.',
     category: 'misc',
     width: 1,
     height: 2,
@@ -313,8 +283,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'stairs_stone',
-    name: 'Stone Stairs',
-    description: 'Cut steps. Nothing burns them down.',
     category: 'misc',
     width: 1,
     height: 2,
@@ -331,8 +299,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'ladder',
-    name: 'Ladder',
-    description: 'Two rails and eight rungs. Cheaper than stairs, and it can be pulled up.',
     category: 'misc',
     maxHealth: 120,
     buildTicks: seconds(8),
@@ -346,8 +312,6 @@ const AUTHORED: StructureDef[] = [
   // --- perimeter and defence -------------------------------------------
   structure({
     id: 'fence_wood',
-    name: 'Wood Fence',
-    description: 'Waist-high palings. Slows a walker, stops a rabbit.',
     category: 'defense',
     maxHealth: 90,
     buildTicks: seconds(4),
@@ -359,8 +323,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'fence_barbed',
-    name: 'Barbed Fence',
-    description: 'Wire strung between stakes. They walk into it and keep walking into it.',
     category: 'defense',
     maxHealth: 120,
     buildTicks: seconds(8),
@@ -373,8 +335,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'gate_wood',
-    name: 'Wood Gate',
-    description: 'A gap you control. Every wall needs exactly one.',
     category: 'door',
     width: 2,
     height: 1,
@@ -392,8 +352,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'gate_metal',
-    name: 'Metal Gate',
-    description: 'A driveway gate cut down and re-hung. Heavy enough to lean on.',
     category: 'door',
     width: 2,
     height: 1,
@@ -412,8 +370,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'barricade_wood',
-    name: 'Wood Barricade',
-    description: 'Planks nailed across an opening. Fast, ugly, and it buys a night.',
     category: 'defense',
     maxHealth: 270,
     buildTicks: seconds(7),
@@ -428,8 +384,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'sandbag',
-    name: 'Sandbag Wall',
-    description: 'Cloth and sand, stacked. Soaks up bullets better than anything you can build.',
     category: 'defense',
     maxHealth: 520,
     buildTicks: seconds(18),
@@ -442,9 +396,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'spike_trap',
-    name: 'Spike Trap',
-    description:
-      'Fire-hardened stakes in a shallow pit. Silent, cheap, and it does not reset itself.',
     category: 'defense',
     maxHealth: 60,
     buildTicks: seconds(10),
@@ -455,8 +406,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'bear_trap',
-    name: 'Bear Trap',
-    description: 'Sprung steel jaws. Holds one thing in place for a long time.',
     category: 'defense',
     maxHealth: 140,
     buildTicks: seconds(12),
@@ -468,8 +417,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'watchtower',
-    name: 'Watchtower',
-    description: 'Four legs and a platform. See the horde while it is still a rumour.',
     category: 'misc',
     width: 2,
     height: 2,
@@ -486,8 +433,6 @@ const AUTHORED: StructureDef[] = [
   // --- storage ----------------------------------------------------------
   structure({
     id: 'storage_box',
-    name: 'Storage Box',
-    description: 'Twenty slots of somewhere-else-to-put-it.',
     category: 'storage',
     maxHealth: 150,
     buildTicks: seconds(4),
@@ -500,8 +445,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'storage_crate',
-    name: 'Storage Crate',
-    description: 'A proper braced crate. Thirty slots, built in place.',
     category: 'storage',
     maxHealth: 240,
     buildTicks: seconds(16),
@@ -515,8 +458,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'storage_locker',
-    name: 'Steel Locker',
-    description: 'Sheet steel and a hasp. Forty slots that survive a fire.',
     category: 'storage',
     maxHealth: 520,
     buildTicks: seconds(26),
@@ -532,8 +473,6 @@ const AUTHORED: StructureDef[] = [
   // --- crafting stations ------------------------------------------------
   structure({
     id: 'workbench',
-    name: 'Workbench',
-    description: 'A flat surface and a vice. The single biggest jump in what you can make.',
     category: 'station',
     width: 2,
     height: 1,
@@ -548,8 +487,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'furnace',
-    name: 'Furnace',
-    description: 'Block and clay around a fire hot enough to free iron from rock.',
     category: 'station',
     maxHealth: 800,
     buildTicks: seconds(10),
@@ -563,8 +500,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'anvil',
-    name: 'Anvil',
-    description: 'Iron on a stump. Where tools stop being lashed together and start being forged.',
     category: 'station',
     maxHealth: 700,
     buildTicks: seconds(10),
@@ -578,8 +513,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'loom',
-    name: 'Loom',
-    description: 'Warp, weft and a beater. Turns a pile of grass into clothing.',
     category: 'station',
     width: 2,
     height: 1,
@@ -594,8 +527,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'campfire',
-    name: 'Campfire',
-    description: 'Light, heat, cooked food and clean water. Nothing else does four jobs this well.',
     category: 'station',
     maxHealth: 60,
     buildTicks: seconds(4),
@@ -609,8 +540,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'cooking_pot',
-    name: 'Cooking Pot',
-    description: 'Iron pot on a tripod. Soup, stew and four bottles of water at a time.',
     category: 'station',
     maxHealth: 160,
     buildTicks: seconds(5),
@@ -624,8 +553,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'grindstone',
-    name: 'Grindstone',
-    description: 'A wheel on a crank. Flour, bone meal, and an edge back on a tired blade.',
     category: 'station',
     maxHealth: 400,
     buildTicks: seconds(8),
@@ -639,8 +566,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'chemistry_bench',
-    name: 'Chemistry Bench',
-    description: 'Retort, burner and a lot of careful notes. Medicine, powder and spirits.',
     category: 'station',
     width: 2,
     height: 1,
@@ -658,8 +583,6 @@ const AUTHORED: StructureDef[] = [
   // --- beds -------------------------------------------------------------
   structure({
     id: 'bed_bedroll',
-    name: 'Bedroll',
-    description: 'Cloth over a fibre mat. You will wake up sore, but you will wake up.',
     category: 'bed',
     width: 1,
     height: 2,
@@ -673,8 +596,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'bed_wood',
-    name: 'Wood Bed',
-    description: 'Frame, slats and a real mattress. Sleeping through the night, properly.',
     category: 'bed',
     width: 1,
     height: 2,
@@ -690,8 +611,6 @@ const AUTHORED: StructureDef[] = [
   // --- farming ----------------------------------------------------------
   structure({
     id: 'farm_plot',
-    name: 'Farm Plot',
-    description: 'Edged, dug and raked. One crop at a time, and it needs watering.',
     category: 'farm',
     maxHealth: 40,
     buildTicks: seconds(6),
@@ -704,8 +623,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'planter_box',
-    name: 'Planter Box',
-    description: 'Raised, composted and it holds water. Grows faster and dries out slower.',
     category: 'farm',
     maxHealth: 110,
     buildTicks: seconds(14),
@@ -719,8 +636,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'compost_bin',
-    name: 'Compost Bin',
-    description: 'Slatted box for scraps and rot. Feed it the harvest you cannot eat.',
     category: 'farm',
     maxHealth: 140,
     buildTicks: seconds(12),
@@ -733,8 +648,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'water_barrel',
-    name: 'Water Barrel',
-    description: 'Catches rain and holds it. Stops the daily walk to the pond.',
     category: 'furniture',
     maxHealth: 170,
     buildTicks: seconds(6),
@@ -747,8 +660,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'well',
-    name: 'Well',
-    description: 'Dug, lined and roped. Clean water forever, for two days of digging.',
     category: 'furniture',
     maxHealth: 900,
     buildTicks: seconds(120),
@@ -764,8 +675,6 @@ const AUTHORED: StructureDef[] = [
   // --- light and signage ------------------------------------------------
   structure({
     id: 'torch_wall',
-    name: 'Wall Torch',
-    description: 'A torch driven into a wall. Burns most of a night.',
     category: 'light',
     maxHealth: 30,
     buildTicks: seconds(2),
@@ -779,8 +688,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'lantern_post',
-    name: 'Lantern Post',
-    description: 'A lantern on a stake. Brighter than a torch and it lasts three nights.',
     category: 'light',
     maxHealth: 70,
     buildTicks: seconds(5),
@@ -793,8 +700,6 @@ const AUTHORED: StructureDef[] = [
   }),
   structure({
     id: 'sign',
-    name: 'Sign',
-    description: 'A board and a burnt-in message. The cheapest coordination tool in multiplayer.',
     category: 'misc',
     maxHealth: 60,
     buildTicks: seconds(4),
@@ -805,7 +710,7 @@ const AUTHORED: StructureDef[] = [
 ];
 
 /** Every structure definition, numbered for the build menu in authoring order. */
-export const STRUCTURE_DEFS: readonly StructureDef[] = AUTHORED.map((def, index) => ({
+export const STRUCTURE_DEFS: readonly StructureSource[] = AUTHORED.map((def, index) => ({
   ...def,
   sortOrder: (index + 1) * 10,
 }));

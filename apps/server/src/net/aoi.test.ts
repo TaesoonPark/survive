@@ -433,7 +433,12 @@ describe('AoiTracker event filtering', () => {
         recipeId: 'test_axe',
         output: { defId: 'axe', count: 1 },
       },
-      { type: 'notification', playerId: 'p2', severity: 'info', text: 'for p2 only' },
+      {
+        type: 'notification',
+        playerId: 'p2',
+        severity: 'info',
+        message: { code: 'notify.forP2Only' },
+      },
     ];
     expect(tracker.filterEvents(events, player)).toHaveLength(1);
     expect(tracker.filterEvents(events, player)[0]!.type).toBe('craftCompleted');

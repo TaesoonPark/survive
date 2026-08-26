@@ -628,3 +628,22 @@ export interface GameData {
   /** Animal definitions that can generate in a biome. */
   animalsForBiome(biome: BiomeId): readonly AnimalDef[];
 }
+
+/**
+ * A content definition as it is *authored*: the numbers, without the words.
+ *
+ * `name` and `description` are supplied by the locale table at `defaultTables()` time (see
+ * `strings/`), so the definition files carry no display text at all. Everything downstream
+ * still consumes the full `ItemDef` and friends - the split is invisible past the point
+ * where the two halves are merged.
+ */
+export type ContentSource<T> = Omit<T, 'name' | 'description'>;
+
+/** Content definitions as authored, before the locale table supplies their text. */
+export type ItemSource = ContentSource<ItemDef>;
+export type RecipeSource = ContentSource<RecipeDef>;
+export type StructureSource = ContentSource<StructureDef>;
+export type ResourceNodeSource = ContentSource<ResourceNodeDef>;
+export type ZombieSource = ContentSource<ZombieDef>;
+export type AnimalSource = ContentSource<AnimalDef>;
+export type CropSource = ContentSource<CropDef>;

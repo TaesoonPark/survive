@@ -168,7 +168,9 @@ describe('sleep', () => {
     expect(scene.player.fatigue).toBeLessThan(0.5);
     expect(sleepingBed(scene.harness.ctx, scene.player)).toBeUndefined();
     expect(
-      scene.harness.eventsOf('notification').some((event) => event.text.includes('rested')),
+      scene.harness
+        .eventsOf('notification')
+        .some((event) => event.message.code === 'notify.wake.rested'),
     ).toBe(true);
   });
 
@@ -184,7 +186,9 @@ describe('sleep', () => {
     expect(sleepingBed(scene.harness.ctx, scene.player)).toBeUndefined();
     expect(scene.harness.eventsOf('sleepEnded')).toHaveLength(1);
     expect(
-      scene.harness.eventsOf('notification').some((event) => event.text.includes('moving nearby')),
+      scene.harness
+        .eventsOf('notification')
+        .some((event) => event.message.code === 'notify.wake.threat'),
     ).toBe(true);
   });
 
@@ -199,7 +203,9 @@ describe('sleep', () => {
 
     expect(scene.harness.eventsOf('sleepEnded')).toHaveLength(1);
     expect(
-      scene.harness.eventsOf('notification').some((event) => event.text.includes('bed is gone')),
+      scene.harness
+        .eventsOf('notification')
+        .some((event) => event.message.code === 'notify.wake.bedLost'),
     ).toBe(true);
     // Fatigue is rising again, not falling.
     const fatigue = scene.player.fatigue;
@@ -478,7 +484,9 @@ describe('respawn', () => {
     expect(scene.player.alive).toBe(true);
     expect(scene.player.x).toBeCloseTo(spawnX, 5);
     expect(
-      scene.harness.eventsOf('notification').some((event) => event.text.includes('bed is gone')),
+      scene.harness
+        .eventsOf('notification')
+        .some((event) => event.message.code === 'notify.bedGone'),
     ).toBe(true);
   });
 

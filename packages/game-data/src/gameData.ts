@@ -27,7 +27,21 @@ import type {
   StructureDef,
   ToolKind,
   ZombieDef,
+  AnimalSource,
+  CropSource,
+  ItemSource,
+  RecipeSource,
+  ResourceNodeSource,
+  StructureSource,
+  ZombieSource,
 } from './types';
+import {
+  DEFAULT_LOCALE,
+  localize,
+  localizeDescribed,
+  type DisplayText,
+  type Locale,
+} from './strings';
 import { ITEM_DEFS } from './defs/items';
 import { RECIPE_DEFS } from './defs/recipes';
 import { STRUCTURE_DEFS } from './defs/structures';
@@ -55,6 +69,19 @@ import { LOOT_TABLE_DEFS } from './defs/loot';
 
 /** The raw arrays behind a {@link GameData}. Overridable so tests can inject bad data. */
 export interface GameDataTables {
+  items: readonly ItemSource[];
+  recipes: readonly RecipeSource[];
+  structures: readonly StructureSource[];
+  nodes: readonly ResourceNodeSource[];
+  zombies: readonly ZombieSource[];
+  animals: readonly AnimalSource[];
+  crops: readonly CropSource[];
+  projectiles: readonly ProjectileDef[];
+  lootTables: readonly LootTableDef[];
+}
+
+/** The same tables once the locale has supplied every name and description. */
+export interface LocalizedTables extends GameDataTables {
   items: readonly ItemDef[];
   recipes: readonly RecipeDef[];
   structures: readonly StructureDef[];
@@ -62,11 +89,38 @@ export interface GameDataTables {
   zombies: readonly ZombieDef[];
   animals: readonly AnimalDef[];
   crops: readonly CropDef[];
-  projectiles: readonly ProjectileDef[];
-  lootTables: readonly LootTableDef[];
 }
 
-/** The shipped content tables. */
+/**
+ * Merge display text into every table.
+ *
+ * Applied *after* overrides rather than inside {@link defaultTables}, so a caller that
+ * swaps in its own content - a test injecting a structure, a mod - gets the same treatment
+ * as the shipped tables instead of silently ending up with untranslated entries beside
+ * translated ones.
+ */
+export function localizeTables(
+  tables: GameDataTables,
+  locale: Locale = DEFAULT_LOCALE,
+): LocalizedTables {
+  return {
+    ...tables,
+    items: localizeDescribed('items', tables.items, locale),
+    recipes: localize('recipes', tables.recipes, locale),
+    structures: localizeDescribed('structures', tables.structures, locale),
+    nodes: localize('nodes', tables.nodes, locale),
+    zombies: localize('zombies', tables.zombies, locale),
+    animals: localize('animals', tables.animals, locale),
+    crops: localize('crops', tables.crops, locale),
+  };
+}
+
+/**
+ * The shipped content tables, as authored: numbers, no words.
+ *
+ * Text is merged in by {@link localizeTables}. Projectiles and loot tables take none -
+ * neither is ever named to the player.
+ */
 export function defaultTables(): GameDataTables {
   return {
     items: ITEM_DEFS,
@@ -806,14 +860,26 @@ export function collectGameDataProblems(tables: GameDataTables): string[] {
  * object keys, so re-ordering a field in an object literal does not.
  */
 export function computeDataVersion(tables: GameDataTables): string {
+  // Deliberately hashes the definitions *without* their display text.
+  //
+  // The version is a content identity, and it is compared across the wire: the client
+  // refuses to play against a server whose content differs. A translation is not a content
+  // difference - a Korean client and an English server run the same world - so folding the
+  // locale into this hash would report every translated client as incompatible, and would
+  // change the version of every existing save the day a second language shipped.
+  const stripText = <T extends object>(defs: readonly T[]): unknown[] =>
+    defs.map((def) => {
+      const { name: _name, description: _description, ...rest } = def as T & DisplayText;
+      return rest;
+    });
   const json = stableStringify([
-    tables.items,
-    tables.recipes,
-    tables.structures,
-    tables.nodes,
-    tables.zombies,
-    tables.animals,
-    tables.crops,
+    stripText(tables.items),
+    stripText(tables.recipes),
+    stripText(tables.structures),
+    stripText(tables.nodes),
+    stripText(tables.zombies),
+    stripText(tables.animals),
+    stripText(tables.crops),
     tables.projectiles,
     tables.lootTables,
   ]);
@@ -835,7 +901,7 @@ function freeze<T>(items: T[]): readonly T[] {
 }
 
 /** Build a {@link GameData} with no validation. Use {@link createGameData} normally. */
-export function buildGameData(tables: GameDataTables): GameData {
+export function buildGameData(tables: LocalizedTables): GameData {
   const items = createRegistry(tables.items, 'items');
   const recipes = createRegistry(tables.recipes, 'recipes');
   const structures = createRegistry(tables.structures, 'structures');
@@ -966,8 +1032,14 @@ export function buildGameData(tables: GameDataTables): GameData {
  * not exist. Pass `overrides` to substitute a table - the tests use it to prove the
  * validator bites, and a future mod loader would use the same door.
  */
-export function createGameData(overrides?: Partial<GameDataTables>): GameData {
-  const tables: GameDataTables = { ...defaultTables(), ...overrides };
+export function createGameData(
+  overrides?: Partial<GameDataTables>,
+  options: { locale?: Locale } = {},
+): GameData {
+  const tables = localizeTables(
+    { ...defaultTables(), ...overrides },
+    options.locale ?? DEFAULT_LOCALE,
+  );
   validateGameData(tables);
   return buildGameData(tables);
 }

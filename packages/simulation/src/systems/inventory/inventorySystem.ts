@@ -85,9 +85,15 @@ function notify(
   ctx: SimContext,
   player: PlayerState,
   severity: 'info' | 'warn' | 'error' | 'success',
-  text: string,
+  code: string,
+  params?: Record<string, string | number>,
 ): void {
-  ctx.events.emit({ type: 'notification', playerId: player.id, severity, text });
+  ctx.events.emit({
+    type: 'notification',
+    playerId: player.id,
+    severity,
+    message: params ? { code, params } : { code },
+  });
 }
 
 function emitDropped(ctx: SimContext, player: PlayerState, stack: ItemStack): void {
@@ -166,7 +172,7 @@ export function syncInventoryCapacity(ctx: SimContext, player: PlayerState): Ite
     if (entry !== null && entry !== undefined && entry >= inv.capacity) player.hotbar[i] = null;
   }
   if (spilled.length > 0) {
-    notify(ctx, player, 'warn', 'Some items would not fit and fell on the ground.');
+    notify(ctx, player, 'warn', 'notify.someItemsDropped');
   }
   return spilled;
 }
@@ -775,7 +781,7 @@ function handleSortContainer(
     }
   }
   view.commit();
-  if (!changed) notify(ctx, player, 'info', 'Already tidy.');
+  if (!changed) notify(ctx, player, 'info', 'notify.alreadyTidy');
 }
 
 // ---------------------------------------------------------------------------
@@ -894,7 +900,7 @@ function handleTakeAll(
   bump(player);
   bump(structure);
   markStructureDirty(ctx.state, structure);
-  if (leftBehind > 0) notify(ctx, player, 'warn', 'Your inventory filled up.');
+  if (leftBehind > 0) notify(ctx, player, 'warn', 'notify.inventoryFull');
 }
 
 // ---------------------------------------------------------------------------
@@ -957,7 +963,7 @@ function handleUnequipItem(
   const defId = stack.defId;
   const result = unequipToInventory(ctx, player, command.slot);
   if (!result.ok) return reject(ctx, player, 'unequipItem', result.reason);
-  if (result.dropped) notify(ctx, player, 'warn', 'No room - it fell on the ground.');
+  if (result.dropped) notify(ctx, player, 'warn', 'notify.noRoomDropped');
   ctx.events.emit({ type: 'itemMoved', playerId: player.id, defId, count: 1 });
 }
 
@@ -995,7 +1001,7 @@ function handleSelectHotbar(
     if (!player.equipment.mainHand) return;
     const result = unequipToInventory(ctx, player, 'mainHand');
     if (!result.ok) return reject(ctx, player, 'selectHotbar', result.reason);
-    if (result.dropped) notify(ctx, player, 'warn', 'No room - it fell on the ground.');
+    if (result.dropped) notify(ctx, player, 'warn', 'notify.noRoomDropped');
     return;
   }
   if (player.equipment.mainHand === wanted) return;
@@ -1078,14 +1084,14 @@ function handleUseItem(
     }
     player.buildDefId = def.placesStructureDefId;
     bump(player);
-    notify(ctx, player, 'success', `${def.name} ready to place.`);
+    notify(ctx, player, 'success', 'notify.readyToPlace', { structure: def.name });
     return;
   }
   if (def.cropDefId) {
     if (!ctx.data.crops.has(def.cropDefId)) {
       return reject(ctx, player, 'useItem', 'that will not grow');
     }
-    notify(ctx, player, 'info', `Plant ${def.name} on a tilled plot.`);
+    notify(ctx, player, 'info', 'notify.plantOnPlot', { crop: def.name });
     return;
   }
 
@@ -1189,5 +1195,5 @@ function handleSetLock(
   }
   bump(structure);
   markStructureDirty(ctx.state, structure);
-  notify(ctx, player, 'success', door.locked ? 'Locked.' : 'Unlocked.');
+  notify(ctx, player, 'success', door.locked ? 'notify.locked' : 'notify.unlocked');
 }

@@ -4,6 +4,8 @@ import type { GameData } from '@survive/game-data';
 import { UNARMED } from '@survive/simulation/systems/combat/weapons';
 import { TextureKey } from '../art/textures';
 import { UI, cssColor } from '../art/palette';
+import { humanize } from '../ui/kit';
+import { notifyText, rejectText, t } from '../ui/strings';
 import { EntityDepth } from './entityRenderer';
 
 /**
@@ -113,27 +115,38 @@ export class EffectsRenderer {
         this.flashScreen(0xffffff, 0.5);
         break;
       case 'levelUp':
-        this.toast(`${event.skill} level ${event.level}`);
+        this.toast(t('toast.levelUp', { skill: event.skill, level: event.level }));
         break;
       case 'notification':
-        this.toast(event.text);
+        // The server named the message and supplied its values; the wording is ours.
+        this.toast(notifyText(event.message));
         break;
       case 'craftCompleted':
-        this.toast(`crafted ${event.output.defId.replace(/_/g, ' ')}`);
+        this.toast(
+          t('toast.crafted', {
+            item: this.data.items.get(event.output.defId)?.name ?? humanize(event.output.defId),
+          }),
+        );
         break;
       case 'buildRejected':
       case 'craftFailed':
-        this.toast(event.reason);
-        break;
       case 'commandRejected':
-        this.toast(event.reason);
+        // These arrive as the simulation's own reason strings, which are a mix of codes and
+        // English phrases. They used to be shown raw, so a failed gather flashed
+        // `toolIneffective` at the player.
+        this.toast(rejectText(event.reason));
         break;
       case 'cropHarvested':
         this.toast('harvested');
         break;
       case 'itemPickedUp':
         if (event.playerId === this.selfId()) {
-          this.toast(`+${event.stack.count} ${event.stack.defId.replace(/_/g, ' ')}`);
+          this.toast(
+            t('toast.pickedUp', {
+              count: event.stack.count,
+              item: this.data.items.get(event.stack.defId)?.name ?? humanize(event.stack.defId),
+            }),
+          );
         }
         break;
       default:

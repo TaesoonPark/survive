@@ -396,7 +396,7 @@ export function fillFromWater(
       type: 'notification',
       playerId: player.id,
       severity: 'warn',
-      text: 'Nothing to carry water in.',
+      message: { code: 'notify.noVessel' },
     });
     return fail('noContainer');
   }
@@ -411,7 +411,7 @@ export function fillFromWater(
     type: 'notification',
     playerId: player.id,
     severity: 'success',
-    text: 'Filled with dirty water.',
+    message: { code: 'notify.filledDirtyWater' },
   });
   // Scooping is quiet, but it is not silent, and it happens at the water's edge where
   // there is nothing to hide behind.

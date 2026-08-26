@@ -34,6 +34,22 @@ export type DamageType =
   | 'zombieBite'
   | 'suffocation';
 
+/**
+ * A message for the player, as a key and its values rather than a finished sentence.
+ *
+ * The simulation used to send prose: `Added 3 x Wood Log to the campfire.` That works
+ * exactly once, in English. Word order, pluralisation and where the number goes are all
+ * decisions the *reader's* language makes, and a server that has already assembled the
+ * sentence has taken them away - so a translated client could do nothing with it.
+ *
+ * `code` names the sentence; `params` fills its blanks. The client owns the wording, which
+ * is also the only place that knows which language to word it in.
+ */
+export interface LocalizedMessage {
+  code: string;
+  params?: Record<string, string | number>;
+}
+
 export type SimEvent =
   // --- combat ------------------------------------------------------------
   | {
@@ -193,7 +209,7 @@ export type SimEvent =
       type: 'notification';
       playerId?: PlayerId;
       severity: 'info' | 'warn' | 'error' | 'success';
-      text: string;
+      message: LocalizedMessage;
     }
   | { type: 'commandRejected'; playerId: PlayerId; command: string; reason: string };
 

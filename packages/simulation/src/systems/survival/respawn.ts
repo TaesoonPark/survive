@@ -87,11 +87,11 @@ export function handleRespawn(
     const bedId = player.bedStructureId;
     const structure = bedId ? ctx.state.structures[bedId] : undefined;
     if (!structure) {
-      bedRefused = 'Your bed is gone.';
+      bedRefused = 'notify.bedGone';
     } else if (!isUsableBed(ctx, structure)) {
-      bedRefused = 'Your bed is wrecked.';
+      bedRefused = 'notify.bedWrecked';
     } else if (structure.bed?.occupantId !== undefined && structure.bed.occupantId !== player.id) {
-      bedRefused = 'Someone else is in your bed.';
+      bedRefused = 'notify.bedOccupied';
     } else {
       target = bedCenter(ctx, structure);
       label = `bed:${structure.id}`;
@@ -112,7 +112,9 @@ export function handleRespawn(
   bump(player);
 
   ctx.events.emit({ type: 'playerRespawned', playerId: player.id, x: player.x, y: player.y });
-  if (bedRefused) notify(ctx, player, 'warn', `${bedRefused} You wake where you started.`);
+  // One code per reason rather than a reason glued in front of a shared sentence: the two
+  // halves do not stay in that order in every language.
+  if (bedRefused) notify(ctx, player, 'warn', bedRefused);
 }
 
 /**
@@ -168,5 +170,5 @@ export function handleSetSpawnPoint(
   player.spawnX = centre.x;
   player.spawnY = centre.y;
   bump(player);
-  notify(ctx, player, 'success', 'You will wake up here.');
+  notify(ctx, player, 'success', 'notify.bedSet');
 }

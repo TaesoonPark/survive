@@ -538,7 +538,7 @@ function tryAttack(
       type: 'notification',
       playerId: player.id,
       severity: 'warn',
-      text: 'Too exhausted to attack.',
+      message: { code: 'notify.tooExhausted' },
     });
     player.attackReadyTick = tick + EXHAUSTED_RETRY_TICKS;
     bump(player);

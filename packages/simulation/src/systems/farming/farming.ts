@@ -711,7 +711,11 @@ function clearPlot(
     type: 'notification',
     playerId: player.id,
     severity: 'info',
-    text: `Cleared the plot${def ? ` of ${def.name.toLowerCase()}` : ''}.`,
+    // Two codes rather than one with an optional blank: a language that puts the crop
+    // first cannot build the second sentence out of the first.
+    message: def
+      ? { code: 'notify.plotClearedOf', params: { crop: def.name } }
+      : { code: 'notify.plotCleared' },
   });
   grantXp(ctx, player, 'farming', XP_CLEAR);
   startCooldown(ctx, player);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SIM_HZ, Tile, pixelToTile, type ItemStack, type PlayerState } from '@survive/protocol';
-import { ITEM_DEFS, createGameData, type GameData, type ItemDef } from '@survive/game-data';
+import { ITEM_DEFS, createGameData, type GameData, type ItemSource } from '@survive/game-data';
 import { createTestSimulation, type TestSimulation } from '@survive/test-utils';
 import { createStack } from '../../core/items';
 import { dropStack } from '../../core/loot';
@@ -43,7 +43,7 @@ function makeSim(patch?: Parameters<typeof createTestSimulation>[0]): TestSimula
  * given a small stack size so the overflow branch is exercised too.
  */
 function meatRotsToCompost(): GameData {
-  const items: ItemDef[] = ITEM_DEFS.map((def) => {
+  const items: ItemSource[] = ITEM_DEFS.map((def) => {
     if (def.id === 'raw_meat' && def.perishable) {
       return { ...def, perishable: { ...def.perishable, spoiledDefId: 'compost' } };
     }

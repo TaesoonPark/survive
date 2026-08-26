@@ -1278,11 +1278,7 @@ describe('farming robustness', () => {
       },
     };
 
-    sanitizePlot(
-      plot,
-      100,
-      CROP_DEFS.find((def) => def.id === 'wheat'),
-    );
+    sanitizePlot(plot, 100, createGameData().crops.get('wheat'));
 
     expect(plot.moisture).toBe(0);
     expect(plot.fertility).toBe(0);
@@ -1448,7 +1444,7 @@ describe('farming robustness', () => {
 // ---------------------------------------------------------------------------
 
 describe('crop model helpers', () => {
-  const wheat = CROP_DEFS.find((def) => def.id === 'wheat') as CropDef;
+  const wheat = createGameData().crops.require('wheat');
 
   it('names a sprite per visible stage and a dead one for a failure', () => {
     const base = {
@@ -1509,7 +1505,7 @@ describe('crop model helpers', () => {
     expect(describePlot(sick, wheat)).toContain('blighted 60%');
     expect(describePlot(sick, wheat)).toContain('fertilized');
 
-    const tomato = CROP_DEFS.find((def) => def.id === 'tomato') as CropDef;
+    const tomato = createGameData().crops.require('tomato');
     const ratoon = {
       ...empty,
       crop: { ...growing.crop, defId: 'tomato', stage: 2, harvestsLeft: 3 },

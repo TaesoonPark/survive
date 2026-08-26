@@ -1,5 +1,5 @@
 import { Biome } from '@survive/protocol';
-import type { LootEntry, ResourceNodeDef } from '../types';
+import type { LootEntry, ResourceNodeSource } from '../types';
 import { days } from './units';
 
 /**
@@ -37,11 +37,10 @@ function y(defId: string, min: number, max: number, chance = 1): LootEntry {
  */
 const INFINITE_NODE_HEALTH = 1_000_000_000;
 
-export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
+export const RESOURCE_NODE_DEFS: readonly ResourceNodeSource[] = [
   // --- trees ------------------------------------------------------------
   {
     id: 'tree_pine',
-    name: 'Pine',
     category: 'tree',
     maxHealth: 120,
     toolKinds: ['axe'],
@@ -70,7 +69,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'tree_oak',
-    name: 'Oak',
     category: 'tree',
     maxHealth: 190,
     toolKinds: ['axe'],
@@ -98,7 +96,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'tree_birch',
-    name: 'Birch',
     category: 'tree',
     maxHealth: 100,
     toolKinds: ['axe'],
@@ -126,7 +123,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'tree_dead',
-    name: 'Dead Tree',
     category: 'tree',
     maxHealth: 70,
     toolKinds: ['axe'],
@@ -158,7 +154,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'fallen_log',
-    name: 'Fallen Log',
     category: 'tree',
     maxHealth: 80,
     toolKinds: ['axe'],
@@ -186,7 +181,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'stump',
-    name: 'Tree Stump',
     category: 'tree',
     maxHealth: 60,
     toolKinds: ['axe'],
@@ -217,7 +211,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   // --- bushes and plants ------------------------------------------------
   {
     id: 'bush_berry',
-    name: 'Berry Bush',
     category: 'bush',
     maxHealth: 20,
     toolKinds: [],
@@ -246,7 +239,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'bush_thorn',
-    name: 'Thorn Bush',
     category: 'bush',
     maxHealth: 34,
     toolKinds: ['knife', 'sickle'],
@@ -274,7 +266,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'plant_fiber_patch',
-    name: 'Fiber Grass',
     category: 'plant',
     maxHealth: 12,
     toolKinds: [],
@@ -309,7 +300,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'mushroom_patch',
-    name: 'Mushroom Patch',
     category: 'plant',
     maxHealth: 10,
     toolKinds: [],
@@ -336,7 +326,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'herb_patch',
-    name: 'Herb Patch',
     category: 'plant',
     maxHealth: 10,
     toolKinds: ['knife', 'sickle'],
@@ -368,7 +357,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   // --- rock, ore and earth ----------------------------------------------
   {
     id: 'rock_small',
-    name: 'Loose Rock',
     category: 'rock',
     maxHealth: 40,
     toolKinds: ['pickaxe'],
@@ -400,7 +388,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'rock_boulder',
-    name: 'Boulder',
     category: 'rock',
     maxHealth: 240,
     toolKinds: ['pickaxe'],
@@ -429,7 +416,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'ore_iron',
-    name: 'Iron Vein',
     category: 'ore',
     maxHealth: 220,
     toolKinds: ['pickaxe'],
@@ -452,7 +438,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'ore_copper',
-    name: 'Copper Vein',
     category: 'ore',
     maxHealth: 180,
     toolKinds: ['pickaxe'],
@@ -475,7 +460,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'ore_coal',
-    name: 'Coal Seam',
     category: 'ore',
     maxHealth: 150,
     toolKinds: ['pickaxe'],
@@ -498,7 +482,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'clay_deposit',
-    name: 'Clay Deposit',
     category: 'rock',
     maxHealth: 50,
     toolKinds: ['shovel'],
@@ -521,7 +504,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'sand_deposit',
-    name: 'Sand Pit',
     category: 'rock',
     maxHealth: 40,
     toolKinds: ['shovel'],
@@ -546,7 +528,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   // --- salvage ----------------------------------------------------------
   {
     id: 'scrap_pile',
-    name: 'Scrap Pile',
     category: 'scrap',
     maxHealth: 70,
     toolKinds: ['wrench', 'hammer'],
@@ -582,7 +563,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   },
   {
     id: 'car_wreck',
-    name: 'Car Wreck',
     category: 'scrap',
     maxHealth: 320,
     toolKinds: ['wrench'],
@@ -616,7 +596,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
   // --- water ------------------------------------------------------------
   {
     id: 'water_source',
-    name: 'Water',
     category: 'water',
     maxHealth: INFINITE_NODE_HEALTH,
     toolKinds: [],
@@ -650,7 +629,6 @@ export const RESOURCE_NODE_DEFS: readonly ResourceNodeDef[] = [
    */
   {
     id: 'fishing_spot',
-    name: 'Fishing Spot',
     category: 'water',
     maxHealth: INFINITE_NODE_HEALTH,
     toolKinds: ['fishingRod'],

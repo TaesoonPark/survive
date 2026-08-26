@@ -11,7 +11,8 @@ import {
 } from '@survive/protocol';
 import type { GameData } from '@survive/game-data';
 import { UI } from '../art/palette';
-import { el, humanize, itemSlot, itemTooltip, statBar } from './kit';
+import { el, entityName, itemSlot, itemTooltip, statBar } from './kit';
+import { t } from './strings';
 import { attachTooltip } from './tooltip';
 import type { UiContext } from './panel';
 
@@ -58,13 +59,13 @@ export class Hud {
   /** Rebuild the vitals column. Cheap: six bars. */
   private renderVitals(player: PlayerState): void {
     this.vitals.replaceChildren(
-      statBar('HP', player.health, player.maxHealth, UI.health),
-      statBar('STAM', player.stamina, player.maxStamina, UI.stamina, { compact: true }),
+      statBar(t('vital.hp'), player.health, player.maxHealth, UI.health),
+      statBar(t('vital.stamina'), player.stamina, player.maxStamina, UI.stamina, { compact: true }),
       // Needs are stored as "how bad": show what is left, which is how a player reads it.
-      statBar('FOOD', player.hunger, 100, UI.hunger, { invert: true, compact: true }),
-      statBar('WATER', player.thirst, 100, UI.thirst, { invert: true, compact: true }),
-      statBar('REST', player.fatigue, 100, UI.fatigue, { invert: true, compact: true }),
-      statBar('BLOOD', player.blood, 100, UI.bleed, { compact: true }),
+      statBar(t('vital.food'), player.hunger, 100, UI.hunger, { invert: true, compact: true }),
+      statBar(t('vital.water'), player.thirst, 100, UI.thirst, { invert: true, compact: true }),
+      statBar(t('vital.rest'), player.fatigue, 100, UI.fatigue, { invert: true, compact: true }),
+      statBar(t('vital.blood'), player.blood, 100, UI.bleed, { compact: true }),
     );
   }
 
@@ -131,7 +132,7 @@ export class Hud {
       stack: held,
       data: ctx.data,
       textures: ctx.textures,
-      badge: 'HAND',
+      badge: t('hotbar.hand'),
       selected: true,
     });
     if (held) heldSlot.title = itemTooltip(held, ctx.data);
@@ -145,7 +146,7 @@ export class Hud {
 
     for (const effect of player.effects) {
       chips.push({
-        text: humanize(effect.id),
+        text: t(`effect.${effect.id}`),
         tone: HARMFUL_EFFECTS.includes(effect.id) ? 'bad' : 'good',
       });
     }
@@ -155,7 +156,7 @@ export class Hud {
     if (infection > 0) chips.push({ text: `infection ${Math.round(infection)}%`, tone: 'bad' });
     for (const part of BODY_PART_IDS) {
       if (player.body.parts[part].fractured) {
-        chips.push({ text: `${humanize(part)} fractured`, tone: 'bad' });
+        chips.push({ text: t('chip.fractured', { part: t(`bodyPart.${part}`) }), tone: 'bad' });
       }
     }
     if (player.craftQueue.length > 0) {
@@ -188,22 +189,26 @@ export class Hud {
       this.prompt.style.display = 'none';
       return;
     }
+    // The verb and the name are one string in the table, not a verb glued to a name here:
+    // "harvest Pine" only reads that way round in some languages.
     let label: string | null = null;
+    const name = entityName(focus, data);
     switch (focus.k) {
       case 'item':
-        label = `pick up ${humanize(focus.stack.defId)}`;
+        label = t('prompt.pickUp', { name });
         break;
       case 'node':
-        label = `harvest ${data.nodes.get(focus.defId)?.name ?? humanize(focus.defId)}`;
+        label = t('prompt.harvest', { name });
         break;
       case 'structure': {
         const def = data.structures.get(focus.defId);
         if (!def) break;
-        if (def.door) label = focus.door?.open ? `close ${def.name}` : `open ${def.name}`;
-        else if (def.container) label = `search ${def.name}`;
-        else if (def.station) label = `use ${def.name}`;
-        else if (def.bed) label = `sleep in ${def.name}`;
-        else if (def.plot) label = `tend ${def.name}`;
+        if (def.door)
+          label = t(focus.door?.open ? 'prompt.closeDoor' : 'prompt.openDoor', { name });
+        else if (def.container) label = t('prompt.search', { name });
+        else if (def.station) label = t('prompt.useStation', { name });
+        else if (def.bed) label = t('prompt.sleep', { name });
+        else if (def.plot) label = t('prompt.tend', { name });
         break;
       }
       default:

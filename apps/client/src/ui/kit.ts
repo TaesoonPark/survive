@@ -2,6 +2,7 @@ import type { EntitySnapshot, ItemStack, PlayerState } from '@survive/protocol';
 import type { GameData } from '@survive/game-data';
 import { RARITY_COLOR, UI, cssColor } from '../art/palette';
 import { TextureKey } from '../art/textures';
+import { t } from './strings';
 
 /**
  * A small DOM toolkit for the game's interface.
@@ -41,6 +42,15 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 /** Turn an id like `wood_log` into `Wood Log`. */
+/**
+ * Turn an id into something readable: `plant_fiber` becomes `Plant Fiber`.
+ *
+ * The last resort, and deliberately *not* translated: it exists for ids that have no entry
+ * anywhere - a definition the server knows and this client's tables do not. Anything with a
+ * closed set of values (a skill, an entity kind, a body part) goes through the string table
+ * instead, and content names come from `@survive/game-data`'s own locale table. If this
+ * function's output reaches a player, something upstream is missing an entry.
+ */
 export function humanize(id: string): string {
   return id
     .split('_')
@@ -151,7 +161,13 @@ export function itemSlot(options: SlotRenderOptions): HTMLDivElement {
   return slot;
 }
 
-/** Multi-line tooltip text for an item. Used as the slot's `title`. */
+/**
+ * Multi-line tooltip text for an item.
+ *
+ * Every line comes from the string table. A stat line is one entry with its blanks filled,
+ * not a label concatenated to a number: "Reach 50, 0.80s swing" has an order and a comma
+ * that belong to English, and a translation has to be free to choose its own.
+ */
 export function itemTooltip(stack: ItemStack, data: GameData): string {
   const def = data.items.get(stack.defId);
   if (!def) return humanize(stack.defId);
@@ -159,44 +175,53 @@ export function itemTooltip(stack: ItemStack, data: GameData): string {
   if (def.description) lines.push(def.description);
   lines.push('');
 
+  const percent = (fraction: number): number => Math.round(fraction * 100);
+
   if (stack.durability !== undefined && def.maxDurability) {
-    lines.push(`Condition ${Math.round((stack.durability / def.maxDurability) * 100)}%`);
+    lines.push(t('tip.condition', { percent: percent(stack.durability / def.maxDurability) }));
   }
   if (stack.freshness !== undefined) {
-    lines.push(`Freshness ${Math.round(stack.freshness * 100)}%`);
+    lines.push(t('tip.freshness', { percent: percent(stack.freshness) }));
   }
   if (def.weapon) {
     const weapon = def.weapon;
-    lines.push(`${weapon.damage} ${weapon.damageType} damage`);
-    lines.push(`Reach ${Math.round(weapon.range)}, ${(weapon.attackTicks / 20).toFixed(2)}s swing`);
-    if (weapon.magazineSize) lines.push(`Magazine ${weapon.magazineSize}`);
-    if (weapon.twoHanded) lines.push('Two-handed');
+    lines.push(t('tip.damage', { amount: weapon.damage, type: weapon.damageType }));
+    lines.push(
+      t('tip.reach', {
+        range: Math.round(weapon.range),
+        seconds: (weapon.attackTicks / 20).toFixed(2),
+      }),
+    );
+    if (weapon.magazineSize) lines.push(t('tip.magazine', { rounds: weapon.magazineSize }));
+    if (weapon.twoHanded) lines.push(t('tip.twoHanded'));
   }
   if (def.tool) {
-    lines.push(`Tool: ${def.tool.kinds.join(', ')} (tier ${def.tool.tier})`);
+    lines.push(t('tip.tool', { kinds: def.tool.kinds.join(', '), tier: def.tool.tier }));
   }
   if (def.armor) {
-    const parts = Object.keys(def.armor.coverage).join(', ');
-    lines.push(`Protects: ${parts || 'nothing'}`);
-    if (def.armor.warmth) lines.push(`Warmth +${def.armor.warmth}`);
+    const parts = Object.keys(def.armor.coverage)
+      .map((part) => t(`bodyPart.${part}`))
+      .join(', ');
+    lines.push(t('tip.protects', { parts: parts || t('tip.protectsNothing') }));
+    if (def.armor.warmth) lines.push(t('tip.warmth', { amount: def.armor.warmth }));
   }
   if (def.food) {
-    if (def.food.nutrition) lines.push(`Food +${def.food.nutrition}`);
-    if (def.food.hydration) lines.push(`Water +${def.food.hydration}`);
+    if (def.food.nutrition) lines.push(t('tip.food', { amount: def.food.nutrition }));
+    if (def.food.hydration) lines.push(t('tip.water', { amount: def.food.hydration }));
     if (def.food.sicknessChance > 0) {
-      lines.push(`Risk of illness: ${Math.round(def.food.sicknessChance * 100)}%`);
+      lines.push(t('tip.illnessRisk', { percent: percent(def.food.sicknessChance) }));
     }
   }
   if (def.drink) {
-    lines.push(`Water +${def.drink.hydration}`);
+    lines.push(t('tip.water', { amount: def.drink.hydration }));
     if (def.drink.sicknessChance > 0) {
-      lines.push(`Risk of illness: ${Math.round(def.drink.sicknessChance * 100)}%`);
+      lines.push(t('tip.illnessRisk', { percent: percent(def.drink.sicknessChance) }));
     }
   }
   if (def.medical) {
-    lines.push(`Medical: ${def.medical.kind}`);
+    lines.push(t('tip.medical', { kind: def.medical.kind }));
   }
-  lines.push(`Weight ${(def.weight * stack.count).toFixed(1)} kg`);
+  lines.push(t('tip.weight', { kg: (def.weight * stack.count).toFixed(1) }));
   return lines.filter((line, index) => line !== '' || index > 0).join('\n');
 }
 
@@ -458,7 +483,7 @@ export function entityName(snapshot: EntitySnapshot, data: GameData): string {
     case 'player':
       return snapshot.name;
     default:
-      return humanize(snapshot.k);
+      return t(`entity.${snapshot.k}`);
   }
 }
 
@@ -469,7 +494,7 @@ export function worldTooltip(
 ): string | null {
   const lines: string[] = [];
   const condition = (health: number, maxHealth: number): string =>
-    `Condition ${Math.round((health / Math.max(1, maxHealth)) * 100)}%`;
+    t('tip.condition', { percent: Math.round((health / Math.max(1, maxHealth)) * 100) });
 
   switch (snapshot.k) {
     case 'node': {
@@ -501,8 +526,8 @@ export function worldTooltip(
           return `${amount} ${name}${chance}`;
         })
         .slice(0, 5);
-      if (yields.length > 0) lines.push(`Yields ${yields.join(', ')}`);
-      if (def.skill) lines.push(`Trains ${def.skill}`);
+      if (yields.length > 0) lines.push(t('tip.yields', { list: yields.join(', ') }));
+      if (def.skill) lines.push(t('tip.trains', { skill: def.skill }));
       break;
     }
     case 'item': {
@@ -515,22 +540,23 @@ export function worldTooltip(
       if (!def) return humanize(snapshot.defId);
       lines.push(def.name);
       lines.push('');
-      if (snapshot.progress < 1)
-        lines.push(`Under construction ${Math.round(snapshot.progress * 100)}%`);
+      if (snapshot.progress < 1) {
+        lines.push(t('tip.underConstruction', { percent: Math.round(snapshot.progress * 100) }));
+      }
       lines.push(condition(snapshot.health, snapshot.maxHealth));
       const roles: string[] = [];
-      if (def.container) roles.push('storage');
-      if (def.door) roles.push(snapshot.door?.open ? 'door (open)' : 'door (closed)');
-      if (def.station) roles.push(`${def.station} station`);
-      if (def.bed) roles.push('bed');
-      if (def.plot) roles.push('farm plot');
+      if (def.container) roles.push(t('tip.roleStorage'));
+      if (def.door) roles.push(t(snapshot.door?.open ? 'tip.roleDoorOpen' : 'tip.roleDoorClosed'));
+      if (def.station) roles.push(t('tip.roleStation', { kind: def.station.kind }));
+      if (def.bed) roles.push(t('tip.roleBed'));
+      if (def.plot) roles.push(t('tip.rolePlot'));
       if (roles.length > 0) lines.push(roles.join(', '));
       break;
     }
     case 'zombie': {
       lines.push(entityName(snapshot, data));
       lines.push('', condition(snapshot.health, snapshot.maxHealth));
-      if (snapshot.crawling) lines.push('Crawling');
+      if (snapshot.crawling) lines.push(t('tip.crawling'));
       break;
     }
     case 'animal': {

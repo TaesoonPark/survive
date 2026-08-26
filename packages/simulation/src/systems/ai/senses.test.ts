@@ -254,7 +254,7 @@ describe('the noise feed', () => {
     sim.ctx.events.emit({
       type: 'notification',
       severity: 'info',
-      text: 'not a sound',
+      message: { code: 'notify.notASound' },
     });
     expect(feed.take(sim.ctx)).toHaveLength(0);
   });

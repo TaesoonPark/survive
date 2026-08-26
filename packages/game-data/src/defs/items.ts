@@ -3,6 +3,7 @@ import type {
   DrinkProps,
   FoodProps,
   ItemDef,
+  ItemSource,
   MedicalProps,
   PerishableProps,
   WeaponProps,
@@ -38,10 +39,9 @@ import { days, gameHours, seconds } from './units';
 // Builders
 // ---------------------------------------------------------------------------
 
-type ItemSpec = Pick<ItemDef, 'id' | 'name' | 'description' | 'category'> &
-  Omit<Partial<ItemDef>, 'id' | 'name' | 'description' | 'category'>;
+type ItemSpec = Pick<ItemSource, 'id' | 'category'> & Omit<Partial<ItemSource>, 'id' | 'category'>;
 
-function item(spec: ItemSpec): ItemDef {
+function item(spec: ItemSpec): ItemSource {
   return {
     stackSize: 20,
     weight: 0.5,
@@ -189,11 +189,9 @@ function spoils(dayCount: number, spoiledDefId?: string): PerishableProps {
 // Raw resources and components
 // ---------------------------------------------------------------------------
 
-const RESOURCES: ItemDef[] = [
+const RESOURCES: ItemSource[] = [
   item({
     id: 'wood_log',
-    name: 'Wood Log',
-    description: 'A rough length of trunk. Everything wooden starts here.',
     category: 'resource',
     weight: 2,
     stackSize: 20,
@@ -202,8 +200,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'wood_plank',
-    name: 'Wood Plank',
-    description: 'Sawn flat and square. Structural, and far less wasteful than logs.',
     category: 'component',
     weight: 1,
     fuel: { burnTicks: 1400, heat: 10 },
@@ -211,8 +207,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'stick',
-    name: 'Stick',
-    description: 'A trimmed branch. Handles, shafts, kindling.',
     category: 'resource',
     weight: 0.25,
     stackSize: 40,
@@ -221,8 +215,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'bark',
-    name: 'Bark',
-    description: 'Strips of bark. Tannin for curing hides, tinder for a fire.',
     category: 'resource',
     weight: 0.15,
     stackSize: 40,
@@ -231,9 +223,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'plant_fiber',
-    name: 'Plant Fiber',
-    description:
-      'Tough stringy stems. The first thing anyone gathers, and the last thing they run out of.',
     category: 'resource',
     weight: 0.05,
     stackSize: 60,
@@ -241,8 +230,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'stone',
-    name: 'Stone',
-    description: 'A hand-sized rock. Sharp enough to cut with, heavy enough to build with.',
     category: 'resource',
     weight: 1.2,
     stackSize: 30,
@@ -250,8 +237,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'flint',
-    name: 'Flint',
-    description: 'Knaps to a shaving edge and throws a spark. Two problems, one stone.',
     category: 'resource',
     weight: 0.3,
     stackSize: 30,
@@ -259,8 +244,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'stone_block',
-    name: 'Stone Block',
-    description: 'Dressed masonry. Heavy, slow to make, and it does not burn.',
     category: 'component',
     weight: 4.5,
     stackSize: 10,
@@ -268,8 +251,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'sand',
-    name: 'Sand',
-    description: 'Silica. Useless until it is molten.',
     category: 'resource',
     weight: 1.4,
     stackSize: 30,
@@ -277,8 +258,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'clay',
-    name: 'Clay',
-    description: 'Wet grey clay dug out of a riverbank. Mortar now, brick after firing.',
     category: 'resource',
     weight: 1.3,
     stackSize: 30,
@@ -286,8 +265,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'clay_brick',
-    name: 'Clay Brick',
-    description: 'Kiln-fired and hard. Lines a burner without cracking.',
     category: 'component',
     weight: 2,
     stackSize: 20,
@@ -295,8 +272,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'coal',
-    name: 'Coal',
-    description: 'Dense black rock that burns hotter and longer than anything you can grow.',
     category: 'fuel',
     weight: 1,
     stackSize: 30,
@@ -305,8 +280,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'charcoal',
-    name: 'Charcoal',
-    description: 'Wood cooked without air. Smelting fuel, and the black half of gunpowder.',
     category: 'fuel',
     weight: 0.6,
     stackSize: 30,
@@ -315,8 +288,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'iron_ore',
-    name: 'Iron Ore',
-    description: 'Rust-red rock. Worthless without a furnace, priceless with one.',
     category: 'resource',
     weight: 2,
     stackSize: 20,
@@ -324,8 +295,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'iron_ingot',
-    name: 'Iron Ingot',
-    description: 'Smelted iron. The line between scraping by and building something.',
     category: 'component',
     weight: 1.8,
     stackSize: 20,
@@ -333,8 +302,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'copper_ore',
-    name: 'Copper Ore',
-    description: 'Green-streaked rock. Soft metal, but it draws into wire and cases a round.',
     category: 'resource',
     weight: 2,
     stackSize: 20,
@@ -342,8 +309,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'copper_ingot',
-    name: 'Copper Ingot',
-    description: 'Soft, conductive, easy to work. Wire and cartridge brass.',
     category: 'component',
     weight: 1.7,
     stackSize: 20,
@@ -351,8 +316,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'steel_ingot',
-    name: 'Steel Ingot',
-    description: 'Iron married to carbon in a hot fire. Holds an edge through a whole horde.',
     category: 'component',
     weight: 1.9,
     stackSize: 20,
@@ -361,8 +324,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'scrap_metal',
-    name: 'Scrap Metal',
-    description: 'Twisted offcuts of the old world. Re-smelt it, or nail it to something.',
     category: 'resource',
     weight: 1,
     stackSize: 30,
@@ -370,8 +331,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'nail',
-    name: 'Nail',
-    description: 'Small, dull, and the reason your roof stays on.',
     category: 'component',
     weight: 0.02,
     stackSize: 200,
@@ -379,8 +338,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'rope',
-    name: 'Rope',
-    description: 'Twisted fibre cordage. Lashings, bowstrings, snares.',
     category: 'component',
     weight: 0.4,
     stackSize: 20,
@@ -388,8 +345,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'cloth_rag',
-    name: 'Cloth Rag',
-    description: 'A torn scrap of fabric. Dirty, but it soaks up blood.',
     category: 'component',
     weight: 0.15,
     stackSize: 40,
@@ -398,8 +353,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'cloth',
-    name: 'Cloth',
-    description: 'A woven square. Clothing, bandages, packs.',
     category: 'component',
     weight: 0.3,
     stackSize: 30,
@@ -407,8 +360,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'leather',
-    name: 'Leather',
-    description: 'Cured hide. Turns a bite into a bruise more often than it does not.',
     category: 'component',
     weight: 0.5,
     stackSize: 20,
@@ -416,8 +367,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'hide',
-    name: 'Animal Hide',
-    description: 'Raw, greasy and starting to smell. Tan it before it turns.',
     category: 'resource',
     weight: 1.2,
     stackSize: 10,
@@ -425,8 +374,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'bone',
-    name: 'Bone',
-    description: 'Sturdy and sharp when split. Burned to ash it makes fertiliser and powder.',
     category: 'resource',
     weight: 0.4,
     stackSize: 20,
@@ -434,8 +381,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'sinew',
-    name: 'Sinew',
-    description: 'Dried tendon. Stronger than any cord you can twist from grass.',
     category: 'resource',
     weight: 0.05,
     stackSize: 30,
@@ -443,8 +388,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'feather',
-    name: 'Feather',
-    description: 'Fletching. Without it an arrow is just a stick going roughly forward.',
     category: 'resource',
     weight: 0.02,
     stackSize: 60,
@@ -452,8 +395,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'resin',
-    name: 'Pine Resin',
-    description: 'Sticky sap. Glue, waterproofing, and it makes a torch burn honestly.',
     category: 'resource',
     weight: 0.2,
     stackSize: 30,
@@ -462,8 +403,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'gunpowder',
-    name: 'Gunpowder',
-    description: 'Charcoal, saltpetre and bone ash, milled fine. Handle it dry and gently.',
     category: 'component',
     weight: 0.1,
     stackSize: 40,
@@ -472,8 +411,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'glass_shard',
-    name: 'Glass Shard',
-    description: 'A broken edge. Cuts whatever holds it about as often as what it is aimed at.',
     category: 'resource',
     weight: 0.1,
     stackSize: 40,
@@ -481,8 +418,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'glass',
-    name: 'Glass Pane',
-    description: 'Cast flat and cooled slowly. Windows, lanterns, bottles.',
     category: 'component',
     weight: 0.8,
     stackSize: 20,
@@ -490,8 +425,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'wire',
-    name: 'Wire',
-    description: 'Drawn copper. Snares, traps, and anything that needs to conduct.',
     category: 'component',
     weight: 0.1,
     stackSize: 40,
@@ -499,8 +432,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'duct_tape',
-    name: 'Duct Tape',
-    description: 'Half a roll left. Fixes everything, once.',
     category: 'component',
     weight: 0.2,
     stackSize: 10,
@@ -509,8 +440,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'plastic',
-    name: 'Plastic Scrap',
-    description: 'Cracked panels and bottle bodies. Light, waterproof, everywhere.',
     category: 'resource',
     weight: 0.3,
     stackSize: 30,
@@ -518,8 +447,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'rubber',
-    name: 'Rubber',
-    description: 'Cut from a tyre wall. Seals, straps, sling bands.',
     category: 'resource',
     weight: 0.4,
     stackSize: 20,
@@ -527,8 +454,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'battery',
-    name: 'Battery',
-    description: 'Most of a charge left. Radios and torches only.',
     category: 'component',
     weight: 0.3,
     stackSize: 10,
@@ -537,9 +462,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'fuel_canister',
-    name: 'Fuel Canister',
-    description:
-      'Jerrycan of petrol, going stale but still furious. Burns hotter than anything else you own.',
     category: 'fuel',
     weight: 5,
     stackSize: 4,
@@ -549,8 +471,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'ammo_casing',
-    name: 'Cartridge Casing',
-    description: 'Drawn brass, ready to be primed, charged and crimped.',
     category: 'component',
     weight: 0.02,
     stackSize: 100,
@@ -558,8 +478,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'fertilizer',
-    name: 'Fertilizer',
-    description: 'Bone meal and rotted greens. Buys back the fertility a harvest takes.',
     category: 'misc',
     weight: 0.6,
     stackSize: 20,
@@ -568,8 +486,6 @@ const RESOURCES: ItemDef[] = [
   }),
   item({
     id: 'compost',
-    name: 'Compost',
-    description: 'A season of kitchen scraps, gone black and sweet-smelling.',
     category: 'misc',
     weight: 0.8,
     stackSize: 20,
@@ -582,11 +498,9 @@ const RESOURCES: ItemDef[] = [
 // Tools
 // ---------------------------------------------------------------------------
 
-const TOOLS: ItemDef[] = [
+const TOOLS: ItemSource[] = [
   item({
     id: 'stone_hatchet',
-    name: 'Stone Hatchet',
-    description: 'A flake of stone lashed to a branch. It will fell a tree and it will fall apart.',
     category: 'tool',
     stackSize: 1,
     weight: 1.4,
@@ -603,8 +517,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'iron_axe',
-    name: 'Iron Axe',
-    description: 'A proper felling axe. Trees stop being an afternoon and become a minute.',
     category: 'tool',
     stackSize: 1,
     weight: 2.4,
@@ -623,8 +535,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'steel_axe',
-    name: 'Steel Axe',
-    description: 'Forged, tempered, and balanced. Bites deeper than iron and shrugs it off.',
     category: 'tool',
     stackSize: 1,
     weight: 2.5,
@@ -645,8 +555,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'stone_pickaxe',
-    name: 'Stone Pickaxe',
-    description: 'Blunt and brittle. Enough for loose rock and coal, hopeless on ore.',
     category: 'tool',
     stackSize: 1,
     weight: 1.8,
@@ -663,8 +571,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'iron_pickaxe',
-    name: 'Iron Pickaxe',
-    description: 'The tool that opens up iron and copper. Everything metal waits behind it.',
     category: 'tool',
     stackSize: 1,
     weight: 3,
@@ -683,8 +589,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'steel_pickaxe',
-    name: 'Steel Pickaxe',
-    description: 'Hardened point, sprung haft. Boulders come apart in handfuls.',
     category: 'tool',
     stackSize: 1,
     weight: 3.1,
@@ -704,8 +608,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'shovel',
-    name: 'Shovel',
-    description: 'Digs clay, sand and graves.',
     category: 'tool',
     stackSize: 1,
     weight: 2.2,
@@ -716,8 +618,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'hoe',
-    name: 'Hoe',
-    description: 'Breaks sod into a seed bed. Farming starts with this or not at all.',
     category: 'tool',
     stackSize: 1,
     weight: 1.9,
@@ -728,8 +628,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'stone_knife',
-    name: 'Stone Knife',
-    description: 'A knapped flint edge. It skins, it whittles, it wears out.',
     category: 'tool',
     stackSize: 1,
     weight: 0.4,
@@ -749,8 +647,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'iron_knife',
-    name: 'Iron Knife',
-    description: 'Thin, quick, and it keeps its edge. Butchering and back alleys.',
     category: 'tool',
     stackSize: 1,
     weight: 0.5,
@@ -771,8 +667,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'hammer',
-    name: 'Hammer',
-    description: 'Drives nails, dresses stone, and settles arguments.',
     category: 'tool',
     stackSize: 1,
     weight: 1.2,
@@ -783,8 +677,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'saw',
-    name: 'Saw',
-    description: 'Turns logs into planks instead of splinters.',
     category: 'tool',
     stackSize: 1,
     weight: 1.1,
@@ -795,8 +687,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'watering_can',
-    name: 'Watering Can',
-    description: 'Beaten from scrap. Carries enough for a bed of crops, if you walk carefully.',
     category: 'tool',
     stackSize: 1,
     weight: 1,
@@ -807,8 +697,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'sickle',
-    name: 'Sickle',
-    description: 'Harvests grain and fibre in armfuls rather than handfuls.',
     category: 'tool',
     stackSize: 1,
     weight: 0.8,
@@ -826,8 +714,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'wrench',
-    name: 'Wrench',
-    description: 'Strips a car down to its useful bones.',
     category: 'tool',
     stackSize: 1,
     weight: 1.3,
@@ -838,8 +724,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'lighter',
-    name: 'Lighter',
-    description: 'A few dozen flicks left in it. Worth more than it looks on a wet night.',
     category: 'tool',
     stackSize: 1,
     weight: 0.05,
@@ -850,8 +734,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'fishing_rod',
-    name: 'Fishing Rod',
-    description: 'Stick, line, bent nail. Quiet food, if you can sit still.',
     category: 'tool',
     stackSize: 1,
     weight: 0.9,
@@ -861,9 +743,6 @@ const TOOLS: ItemDef[] = [
   }),
   item({
     id: 'multitool',
-    name: 'Multitool',
-    description:
-      'Pre-collapse alloy, still tight in the joints. Four tools in a pocket, and irreplaceable.',
     category: 'tool',
     stackSize: 1,
     weight: 0.3,
@@ -896,11 +775,9 @@ const TOOLS: ItemDef[] = [
 // copy of each, which is why there is no separate `hatchet_weapon`.
 // ---------------------------------------------------------------------------
 
-const MELEE_WEAPONS: ItemDef[] = [
+const MELEE_WEAPONS: ItemSource[] = [
   item({
     id: 'wooden_club',
-    name: 'Wooden Club',
-    description: 'A log with one end narrowed. Crude, and it caves a skull in anyway.',
     category: 'weapon',
     stackSize: 1,
     weight: 1.6,
@@ -917,8 +794,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'baseball_bat',
-    name: 'Baseball Bat',
-    description: 'Ash, taped grip, somebody else’s initials burned into the barrel.',
     category: 'weapon',
     stackSize: 1,
     weight: 1.1,
@@ -938,8 +813,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'nail_bat',
-    name: 'Nail Bat',
-    description: 'A bat with a dozen nails hammered through it. Every hit tears on the way out.',
     category: 'weapon',
     stackSize: 1,
     weight: 1.4,
@@ -962,8 +835,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'machete',
-    name: 'Machete',
-    description: 'Long, heavy at the tip, and it takes an arm off at the elbow.',
     category: 'weapon',
     stackSize: 1,
     weight: 1,
@@ -986,8 +857,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'spear',
-    name: 'Spear',
-    description: 'Reach. The only thing standing between you and a bite you cannot take back.',
     category: 'weapon',
     stackSize: 1,
     weight: 1.7,
@@ -1010,8 +879,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'iron_sword',
-    name: 'Iron Sword',
-    description: 'Somebody’s idea of a sword, forged from what was to hand. It works.',
     category: 'weapon',
     stackSize: 1,
     weight: 1.9,
@@ -1035,8 +902,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'sledgehammer',
-    name: 'Sledgehammer',
-    description: 'Slow as a season, and nothing it connects with gets back up. Doors included.',
     category: 'weapon',
     stackSize: 1,
     weight: 5.5,
@@ -1061,8 +926,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'crowbar',
-    name: 'Crowbar',
-    description: 'Prying tool first, weapon second, and never quite bad at either.',
     category: 'weapon',
     stackSize: 1,
     weight: 2.3,
@@ -1081,8 +944,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'kitchen_knife',
-    name: 'Kitchen Knife',
-    description: 'Out of somebody’s drawer. Fine for onions, honest about anything larger.',
     category: 'weapon',
     stackSize: 1,
     weight: 0.3,
@@ -1102,8 +963,6 @@ const MELEE_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'pitchfork',
-    name: 'Pitchfork',
-    description: 'Four tines, farm-length handle. Pins one and pushes two.',
     category: 'weapon',
     stackSize: 1,
     weight: 2.6,
@@ -1134,11 +993,9 @@ const MELEE_WEAPONS: ItemDef[] = [
 // same bow.
 // ---------------------------------------------------------------------------
 
-const RANGED_WEAPONS: ItemDef[] = [
+const RANGED_WEAPONS: ItemSource[] = [
   item({
     id: 'hunting_bow',
-    name: 'Hunting Bow',
-    description: 'Stick, sinew, patience. Kills deer and walkers without telling the street.',
     category: 'weapon',
     stackSize: 1,
     weight: 1.2,
@@ -1164,8 +1021,6 @@ const RANGED_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'crossbow',
-    name: 'Crossbow',
-    description: 'Slow to crank, brutal on release, and it barely whispers.',
     category: 'weapon',
     stackSize: 1,
     weight: 3,
@@ -1192,8 +1047,6 @@ const RANGED_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'pistol_9mm',
-    name: '9mm Pistol',
-    description: 'Fifteen rounds and a very loud opinion. Everything within four chunks hears it.',
     category: 'weapon',
     stackSize: 1,
     weight: 1,
@@ -1217,8 +1070,6 @@ const RANGED_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'rifle_308',
-    name: '.308 Hunting Rifle',
-    description: 'Reaches across a field and ends the argument. Then the field fills up.',
     category: 'weapon',
     stackSize: 1,
     weight: 3.8,
@@ -1244,8 +1095,6 @@ const RANGED_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'shotgun',
-    name: 'Pump Shotgun',
-    description: 'Eight pellets of instant regret at close range. Also a dinner bell.',
     category: 'weapon',
     stackSize: 1,
     weight: 3.4,
@@ -1270,8 +1119,6 @@ const RANGED_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'molotov',
-    name: 'Molotov Cocktail',
-    description: 'A bottle, a rag and a bad idea. Burns a doorway shut for a minute.',
     category: 'weapon',
     stackSize: 1,
     weight: 0.9,
@@ -1289,9 +1136,6 @@ const RANGED_WEAPONS: ItemDef[] = [
   }),
   item({
     id: 'throwing_rock',
-    name: 'Throwing Rock',
-    description:
-      'A fist-sized stone picked for balance. Barely hurts, but it lands somewhere you are not.',
     category: 'weapon',
     stackSize: 1,
     weight: 0.5,
@@ -1308,11 +1152,9 @@ const RANGED_WEAPONS: ItemDef[] = [
   }),
 ];
 
-const AMMO: ItemDef[] = [
+const AMMO: ItemSource[] = [
   item({
     id: 'arrow_wooden',
-    name: 'Wooden Arrow',
-    description: 'Fire-hardened shaft, flint head. Usually survives to be pulled out again.',
     category: 'ammo',
     weight: 0.05,
     stackSize: 40,
@@ -1321,8 +1163,6 @@ const AMMO: ItemDef[] = [
   }),
   item({
     id: 'arrow_iron',
-    name: 'Iron Arrow',
-    description: 'Heavier head, punches through a leather jacket and whatever is wearing it.',
     category: 'ammo',
     weight: 0.08,
     stackSize: 40,
@@ -1331,8 +1171,6 @@ const AMMO: ItemDef[] = [
   }),
   item({
     id: 'bolt',
-    name: 'Crossbow Bolt',
-    description: 'Short, thick and mean. Made to be recovered.',
     category: 'ammo',
     weight: 0.07,
     stackSize: 40,
@@ -1341,8 +1179,6 @@ const AMMO: ItemDef[] = [
   }),
   item({
     id: 'ammo_9mm',
-    name: '9mm Round',
-    description: 'Common before, precious now.',
     category: 'ammo',
     weight: 0.012,
     stackSize: 120,
@@ -1352,8 +1188,6 @@ const AMMO: ItemDef[] = [
   }),
   item({
     id: 'ammo_308',
-    name: '.308 Round',
-    description: 'Full-power rifle brass. Six of them are a plan.',
     category: 'ammo',
     weight: 0.024,
     stackSize: 80,
@@ -1363,8 +1197,6 @@ const AMMO: ItemDef[] = [
   }),
   item({
     id: 'ammo_shell',
-    name: 'Shotgun Shell',
-    description: 'Plastic hull, brass base, a handful of lead.',
     category: 'ammo',
     weight: 0.045,
     stackSize: 60,
@@ -1382,11 +1214,9 @@ const AMMO: ItemDef[] = [
 // reaching skin, so 1 = no help at all and 0.1 = almost bite-proof.
 // ---------------------------------------------------------------------------
 
-const ARMOR: ItemDef[] = [
+const ARMOR: ItemSource[] = [
   item({
     id: 'leather_cap',
-    name: 'Leather Cap',
-    description: 'Stops a scrape and keeps the rain out. That is the extent of it.',
     category: 'armor',
     stackSize: 1,
     weight: 0.3,
@@ -1402,8 +1232,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'hard_hat',
-    name: 'Hard Hat',
-    description: 'Site helmet. Designed for falling bricks, repurposed for falling teeth.',
     category: 'armor',
     stackSize: 1,
     weight: 0.5,
@@ -1419,8 +1247,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'motorcycle_helmet',
-    name: 'Motorcycle Helmet',
-    description: 'Full face, tinted visor. They can bite it all day.',
     category: 'armor',
     stackSize: 1,
     weight: 1.4,
@@ -1438,9 +1264,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'gas_mask',
-    name: 'Gas Mask',
-    description:
-      'Filters still good. Breathing is the only thing it helps with, and sometimes that is everything.',
     category: 'armor',
     stackSize: 1,
     weight: 0.8,
@@ -1458,8 +1281,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'cloth_shirt',
-    name: 'Cloth Shirt',
-    description: 'Homespun and shapeless. Better than bare skin, barely.',
     category: 'armor',
     stackSize: 1,
     weight: 0.4,
@@ -1474,8 +1295,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'leather_jacket',
-    name: 'Leather Jacket',
-    description: 'Thick hide, long sleeves. Teeth catch on it instead of in you.',
     category: 'armor',
     stackSize: 1,
     weight: 2.2,
@@ -1493,8 +1312,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'kevlar_vest',
-    name: 'Kevlar Vest',
-    description: 'Soft armour under a nylon shell. Stops bullets, does nothing for your arms.',
     category: 'armor',
     stackSize: 1,
     weight: 3.6,
@@ -1512,8 +1329,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'plate_carrier',
-    name: 'Plate Carrier',
-    description: 'Ceramic plates front and back. Heavy, hot, and the best decision you will make.',
     category: 'armor',
     stackSize: 1,
     weight: 8,
@@ -1531,8 +1346,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'cloth_pants',
-    name: 'Cloth Pants',
-    description: 'Two legs of woven fibre held up with cord.',
     category: 'armor',
     stackSize: 1,
     weight: 0.4,
@@ -1547,8 +1360,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'jeans',
-    name: 'Jeans',
-    description: 'Denim. Tougher than it has any right to be.',
     category: 'armor',
     stackSize: 1,
     weight: 0.7,
@@ -1564,8 +1375,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'leather_pants',
-    name: 'Leather Pants',
-    description: 'Stiff, hot, and hard to bite through. Crawlers go for legs.',
     category: 'armor',
     stackSize: 1,
     weight: 1.8,
@@ -1582,8 +1391,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'work_boots',
-    name: 'Work Boots',
-    description: 'Steel toes, thick soles. You can stamp on things.',
     category: 'armor',
     stackSize: 1,
     weight: 1.5,
@@ -1599,8 +1406,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'leather_gloves',
-    name: 'Leather Gloves',
-    description: 'Saves your hands from thorns, glass and the occasional set of teeth.',
     category: 'armor',
     stackSize: 1,
     weight: 0.2,
@@ -1616,8 +1421,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'work_gloves',
-    name: 'Work Gloves',
-    description: 'Reinforced palms. Hauling stone stops taking skin off.',
     category: 'armor',
     stackSize: 1,
     weight: 0.25,
@@ -1633,8 +1436,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'backpack_small',
-    name: 'Small Backpack',
-    description: 'Eight more pockets. The single biggest quality-of-life upgrade in the game.',
     category: 'container',
     stackSize: 1,
     weight: 0.8,
@@ -1651,8 +1452,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'backpack_large',
-    name: 'Large Backpack',
-    description: 'A hiking frame pack. Sixteen slots, and you feel every one of them.',
     category: 'container',
     stackSize: 1,
     weight: 1.8,
@@ -1670,9 +1469,6 @@ const ARMOR: ItemDef[] = [
   }),
   item({
     id: 'tool_belt',
-    name: 'Tool Belt',
-    description:
-      'Four loops of leather at the hip. Fewer slots than a pack, no weight on your back, and craftable on day one.',
     category: 'container',
     stackSize: 1,
     weight: 0.6,
@@ -1697,11 +1493,9 @@ const ARMOR: ItemDef[] = [
 // cooking.
 // ---------------------------------------------------------------------------
 
-const FOOD: ItemDef[] = [
+const FOOD: ItemSource[] = [
   item({
     id: 'berry',
-    name: 'Berries',
-    description: 'A handful off a bush. Sweet, wet, and gone in a second.',
     category: 'food',
     weight: 0.1,
     stackSize: 30,
@@ -1711,8 +1505,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'apple',
-    name: 'Apple',
-    description: 'Bruised on one side. Still an apple.',
     category: 'food',
     weight: 0.2,
     stackSize: 20,
@@ -1722,8 +1514,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'mushroom',
-    name: 'Wild Mushroom',
-    description: 'Probably the edible kind. Probably.',
     category: 'food',
     weight: 0.1,
     stackSize: 20,
@@ -1733,8 +1523,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'raw_meat',
-    name: 'Raw Meat',
-    description: 'Butchered and bloody. Cook it unless you enjoy fever dreams.',
     category: 'food',
     weight: 0.5,
     stackSize: 10,
@@ -1744,8 +1532,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'cooked_meat',
-    name: 'Cooked Meat',
-    description: 'Charred outside, hot through. The single best reason to keep a fire.',
     category: 'food',
     weight: 0.4,
     stackSize: 10,
@@ -1761,8 +1547,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'raw_fish',
-    name: 'Raw Fish',
-    description: 'Still slick. Bones and all if you are desperate.',
     category: 'food',
     weight: 0.4,
     stackSize: 10,
@@ -1772,8 +1556,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'cooked_fish',
-    name: 'Cooked Fish',
-    description: 'Flaky and salty. Quiet food, honestly earned.',
     category: 'food',
     weight: 0.35,
     stackSize: 10,
@@ -1789,8 +1571,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'egg',
-    name: 'Egg',
-    description: 'Warm from the nest. Fragile in a pack full of stone.',
     category: 'food',
     weight: 0.06,
     stackSize: 20,
@@ -1800,8 +1580,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'flour',
-    name: 'Flour',
-    description: 'Wheat put through a grindstone. Edible dry, in the way sand is.',
     category: 'food',
     weight: 0.4,
     stackSize: 20,
@@ -1810,8 +1588,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'dough',
-    name: 'Dough',
-    description: 'Flour and water, kneaded. One fire away from bread.',
     category: 'food',
     weight: 0.5,
     stackSize: 10,
@@ -1821,8 +1597,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'bread',
-    name: 'Bread',
-    description: 'A dense flat loaf. Keeps for days and fills you like nothing else you can grow.',
     category: 'food',
     weight: 0.4,
     stackSize: 10,
@@ -1832,8 +1606,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'baked_potato',
-    name: 'Baked Potato',
-    description: 'Ash on the skin, steam in the middle.',
     category: 'food',
     weight: 0.3,
     stackSize: 10,
@@ -1843,8 +1615,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'soup_vegetable',
-    name: 'Vegetable Soup',
-    description: 'Whatever was in the plot, boiled to nothing. Hot, wet and enormously welcome.',
     category: 'food',
     weight: 0.6,
     stackSize: 10,
@@ -1854,8 +1624,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'stew_meat',
-    name: 'Meat Stew',
-    description: 'Meat, roots and stock. The best meal in the world after four days of berries.',
     category: 'food',
     weight: 0.8,
     stackSize: 10,
@@ -1865,8 +1633,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'jerky',
-    name: 'Jerky',
-    description: 'Dried over a low fire for hours. Ugly, tough, and it does not rot.',
     category: 'food',
     weight: 0.12,
     stackSize: 30,
@@ -1875,8 +1641,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'canned_beans',
-    name: 'Canned Beans',
-    description: 'Dented tin, intact seal. Somebody stocked a cupboard and never came home.',
     category: 'food',
     weight: 0.45,
     stackSize: 10,
@@ -1886,8 +1650,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'canned_soup',
-    name: 'Canned Soup',
-    description: 'Cold from the tin, and still the highlight of the week.',
     category: 'food',
     weight: 0.45,
     stackSize: 10,
@@ -1897,8 +1659,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'chocolate_bar',
-    name: 'Chocolate Bar',
-    description: 'Bloomed grey with age. Sugar is sugar.',
     category: 'food',
     weight: 0.1,
     stackSize: 20,
@@ -1908,8 +1668,6 @@ const FOOD: ItemDef[] = [
   }),
   item({
     id: 'energy_bar',
-    name: 'Energy Bar',
-    description: 'Tastes like cardboard, hits like a slap. Eat it while running.',
     category: 'food',
     weight: 0.08,
     stackSize: 20,
@@ -1928,11 +1686,9 @@ const FOOD: ItemDef[] = [
 // Produce (crop outputs that are also food)
 // ---------------------------------------------------------------------------
 
-const PRODUCE: ItemDef[] = [
+const PRODUCE: ItemSource[] = [
   item({
     id: 'wheat',
-    name: 'Wheat',
-    description: 'A bundle of ripe ears. Inedible until it has been through a grindstone.',
     category: 'produce',
     weight: 0.2,
     stackSize: 30,
@@ -1941,8 +1697,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'corn',
-    name: 'Corn',
-    description: 'Heavy cob, bright kernels. Food, feed and the base of any still.',
     category: 'produce',
     weight: 0.35,
     stackSize: 20,
@@ -1952,8 +1706,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'potato',
-    name: 'Potato',
-    description: 'Dirt-caked and dense. Grows anywhere, keeps forever, tastes of nothing.',
     category: 'produce',
     weight: 0.3,
     stackSize: 30,
@@ -1962,8 +1714,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'carrot',
-    name: 'Carrot',
-    description: 'Crisp and startlingly sweet.',
     category: 'produce',
     weight: 0.15,
     stackSize: 30,
@@ -1973,8 +1723,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'tomato',
-    name: 'Tomato',
-    description: 'Splits if you look at it wrong. Mostly water, and that is the point.',
     category: 'produce',
     weight: 0.15,
     stackSize: 20,
@@ -1984,8 +1732,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'cabbage',
-    name: 'Cabbage',
-    description: 'A dense head of leaves. Survives frost that kills everything else.',
     category: 'produce',
     weight: 0.7,
     stackSize: 10,
@@ -1995,8 +1741,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'pumpkin',
-    name: 'Pumpkin',
-    description: 'Absurdly heavy, absurdly filling. Worth the two weeks.',
     category: 'produce',
     weight: 3.5,
     stackSize: 5,
@@ -2006,8 +1750,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'onion',
-    name: 'Onion',
-    description: 'Sharp raw, transformative in a pot.',
     category: 'produce',
     weight: 0.15,
     stackSize: 30,
@@ -2017,8 +1759,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'beans',
-    name: 'Beans',
-    description: 'Keeps producing all season if you let it climb.',
     category: 'produce',
     weight: 0.2,
     stackSize: 30,
@@ -2028,8 +1768,6 @@ const PRODUCE: ItemDef[] = [
   }),
   item({
     id: 'herb',
-    name: 'Medicinal Herb',
-    description: 'Bitter leaves. Steeped for pain, mashed for wounds, mouldered for antibiotics.',
     category: 'produce',
     weight: 0.05,
     stackSize: 40,
@@ -2042,11 +1780,9 @@ const PRODUCE: ItemDef[] = [
 // Drinks
 // ---------------------------------------------------------------------------
 
-const DRINKS: ItemDef[] = [
+const DRINKS: ItemSource[] = [
   item({
     id: 'water_dirty',
-    name: 'Dirty Water',
-    description: 'Scooped from a pond. It will keep you alive and then make you wish it had not.',
     category: 'drink',
     weight: 0.5,
     stackSize: 10,
@@ -2055,8 +1791,6 @@ const DRINKS: ItemDef[] = [
   }),
   item({
     id: 'water_clean',
-    name: 'Clean Water',
-    description: 'Boiled and cooled. The most underrated item in the world.',
     category: 'drink',
     weight: 0.5,
     stackSize: 10,
@@ -2065,8 +1799,6 @@ const DRINKS: ItemDef[] = [
   }),
   item({
     id: 'water_bottle',
-    name: 'Water Bottle',
-    description: 'Scratched plastic, screw cap. Four swallows of carried safety.',
     category: 'container',
     stackSize: 1,
     weight: 0.2,
@@ -2075,8 +1807,6 @@ const DRINKS: ItemDef[] = [
   }),
   item({
     id: 'canteen',
-    name: 'Canteen',
-    description: 'Metal, felt-covered, holds six. Refills at any water you can reach.',
     category: 'container',
     stackSize: 1,
     weight: 0.5,
@@ -2086,8 +1816,6 @@ const DRINKS: ItemDef[] = [
   }),
   item({
     id: 'coffee',
-    name: 'Coffee',
-    description: 'Stale grounds, boiled twice. Buys you an hour you have not earned.',
     category: 'drink',
     weight: 0.3,
     stackSize: 10,
@@ -2104,8 +1832,6 @@ const DRINKS: ItemDef[] = [
   }),
   item({
     id: 'tea_herbal',
-    name: 'Herbal Tea',
-    description: 'Willow bark and bitter leaves. Takes the edge off an ache.',
     category: 'drink',
     weight: 0.3,
     stackSize: 10,
@@ -2117,8 +1843,6 @@ const DRINKS: ItemDef[] = [
   }),
   item({
     id: 'soda',
-    name: 'Soda',
-    description: 'Flat, warm, and 40 grams of sugar.',
     category: 'drink',
     weight: 0.4,
     stackSize: 10,
@@ -2128,8 +1852,6 @@ const DRINKS: ItemDef[] = [
   }),
   item({
     id: 'alcohol_moonshine',
-    name: 'Moonshine',
-    description: 'Fruit mash run through a still. Painkiller, antiseptic, terrible idea.',
     category: 'drink',
     weight: 0.5,
     stackSize: 10,
@@ -2157,11 +1879,9 @@ const DRINKS: ItemDef[] = [
 // bleeding and then quietly starts something worse.
 // ---------------------------------------------------------------------------
 
-const MEDICAL: ItemDef[] = [
+const MEDICAL: ItemSource[] = [
   item({
     id: 'bandage_dirty',
-    name: 'Dirty Bandage',
-    description: 'Torn rag, wrapped tight. Stops the bleeding and invites the infection.',
     category: 'medical',
     weight: 0.05,
     stackSize: 20,
@@ -2177,8 +1897,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'bandage_clean',
-    name: 'Clean Bandage',
-    description: 'Boiled cloth, dried in the sun. Enormously better than a rag.',
     category: 'medical',
     weight: 0.05,
     stackSize: 20,
@@ -2194,8 +1912,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'bandage_sterile',
-    name: 'Sterile Dressing',
-    description: 'Sealed, antiseptic-soaked gauze. Nothing gets in behind it.',
     category: 'medical',
     weight: 0.05,
     stackSize: 20,
@@ -2213,8 +1929,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'disinfected_rag',
-    name: 'Disinfected Rag',
-    description: 'A rag soaked in antiseptic. Field-grade, and it works.',
     category: 'medical',
     weight: 0.05,
     stackSize: 20,
@@ -2231,8 +1945,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'suture_kit',
-    name: 'Suture Kit',
-    description: 'Needle, sinew and a steady hand. Closes what a bandage only covers.',
     category: 'medical',
     stackSize: 1,
     weight: 0.2,
@@ -2250,8 +1962,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'splint_wood',
-    name: 'Wooden Splint',
-    description: 'Two sticks and a rag. Sets a break badly, which beats not at all.',
     category: 'medical',
     weight: 0.4,
     stackSize: 10,
@@ -2267,8 +1977,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'splint_medical',
-    name: 'Medical Splint',
-    description: 'Padded alloy stay with proper straps. Sets a fracture and lets you walk.',
     category: 'medical',
     weight: 0.5,
     stackSize: 10,
@@ -2285,8 +1993,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'antiseptic',
-    name: 'Antiseptic',
-    description: 'Stings like betrayal. Buys a wound a day of grace.',
     category: 'medical',
     weight: 0.2,
     stackSize: 10,
@@ -2301,8 +2007,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'antibiotics',
-    name: 'Antibiotics',
-    description: 'A short course of pills. The only thing that reliably stops sepsis.',
     category: 'medical',
     weight: 0.05,
     stackSize: 10,
@@ -2317,8 +2021,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'painkiller',
-    name: 'Painkillers',
-    description: 'Two white tablets. Pain goes quiet; the injury does not go away.',
     category: 'medical',
     weight: 0.02,
     stackSize: 20,
@@ -2332,8 +2034,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'morphine',
-    name: 'Morphine',
-    description: 'One ampoule. Erases pain completely, and your judgement with it.',
     category: 'medical',
     weight: 0.05,
     stackSize: 5,
@@ -2349,8 +2049,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'vitamins',
-    name: 'Vitamins',
-    description: 'A jar of chalky tablets. Slow, boring, genuinely useful.',
     category: 'medical',
     weight: 0.1,
     stackSize: 10,
@@ -2365,8 +2063,6 @@ const MEDICAL: ItemDef[] = [
   }),
   item({
     id: 'first_aid_kit',
-    name: 'First Aid Kit',
-    description: 'Green box, white cross, three uses left. Everything in one place for once.',
     category: 'medical',
     stackSize: 1,
     weight: 1.2,
@@ -2392,79 +2088,55 @@ const MEDICAL: ItemDef[] = [
 
 interface SeedSpec {
   id: string;
-  name: string;
   crop: string;
-  description: string;
 }
 
 const SEED_SPECS: SeedSpec[] = [
   {
     id: 'seed_wheat',
-    name: 'Wheat Seed',
     crop: 'wheat',
-    description: 'A palmful of grain held back from the last harvest.',
   },
   {
     id: 'seed_corn',
-    name: 'Corn Seed',
     crop: 'corn',
-    description: 'Dried kernels. Slow, heavy, worth it.',
   },
   {
     id: 'seed_potato',
-    name: 'Seed Potato',
     crop: 'potato',
-    description: 'A sprouting tuber, cut to the eyes.',
   },
   {
     id: 'seed_carrot',
-    name: 'Carrot Seed',
     crop: 'carrot',
-    description: 'Dust-fine seed. Sow thick, thin later.',
   },
   {
     id: 'seed_tomato',
-    name: 'Tomato Seed',
     crop: 'tomato',
-    description: 'Scraped from a ripe fruit and dried on paper.',
   },
   {
     id: 'seed_cabbage',
-    name: 'Cabbage Seed',
     crop: 'cabbage',
-    description: 'Cold-hardy. The last thing still growing in autumn.',
   },
   {
     id: 'seed_pumpkin',
-    name: 'Pumpkin Seed',
     crop: 'pumpkin',
-    description: 'Flat white seeds. Needs room and a whole season.',
   },
   {
     id: 'seed_onion',
-    name: 'Onion Set',
     crop: 'onion',
-    description: 'Small bulbs ready to go back in the ground.',
   },
   {
     id: 'seed_beans',
-    name: 'Bean Seed',
     crop: 'beans',
-    description: 'Give it something to climb and it keeps giving back.',
   },
   {
     id: 'seed_herb',
-    name: 'Herb Seed',
     crop: 'herb',
-    description: 'Wild medicinal seed. The start of a medicine cabinet.',
   },
 ];
 
-const SEEDS: ItemDef[] = SEED_SPECS.map((spec) =>
+const SEEDS: ItemSource[] = SEED_SPECS.map((spec) =>
   item({
     id: spec.id,
-    name: spec.name,
-    description: spec.description,
     category: 'seed',
     weight: 0.02,
     stackSize: 40,
@@ -2483,8 +2155,6 @@ const SEEDS: ItemDef[] = SEED_SPECS.map((spec) =>
 
 interface KitSpec {
   id: string;
-  name: string;
-  description: string;
   structure: string;
   weight: number;
   rarity?: ItemDef['rarity'];
@@ -2494,99 +2164,73 @@ interface KitSpec {
 const KIT_SPECS: KitSpec[] = [
   {
     id: 'campfire_kit',
-    name: 'Campfire Kit',
-    description: 'A ring of stones and a bundle of kindling. Light, warmth, cooking, safety.',
     structure: 'campfire',
     weight: 3,
     extraTags: ['tier1'],
   },
   {
     id: 'workbench_kit',
-    name: 'Workbench Kit',
-    description: 'Trestles and a top, ready to assemble. Everything worth making needs it.',
     structure: 'workbench',
     weight: 8,
     extraTags: ['tier1'],
   },
   {
     id: 'storage_box_kit',
-    name: 'Storage Box Kit',
-    description: 'Flat-packed crate. Twenty slots that are not on your back.',
     structure: 'storage_box',
     weight: 6,
   },
   {
     id: 'bed_kit',
-    name: 'Bed Kit',
-    description: 'Frame, slats and a stuffed mattress. Sleep is how you get the night back.',
     structure: 'bed_wood',
     weight: 12,
   },
   {
     id: 'farm_plot_kit',
-    name: 'Farm Plot Kit',
-    description: 'Edging boards and a bag of good soil. Turns dirt into a crop bed.',
     structure: 'farm_plot',
     weight: 5,
   },
   {
     id: 'water_barrel_kit',
-    name: 'Water Barrel Kit',
-    description: 'Staves, hoops and pitch. Collects rain so you stop walking to the pond.',
     structure: 'water_barrel',
     weight: 9,
   },
   {
     id: 'furnace_kit',
-    name: 'Furnace Kit',
-    description: 'Dressed block and raw clay for the lining. Iron begins here.',
     structure: 'furnace',
     weight: 22,
   },
   {
     id: 'anvil_kit',
-    name: 'Anvil Kit',
-    description: 'A block of iron on a stump. Absurdly heavy, and steel needs it.',
     structure: 'anvil',
     weight: 30,
   },
   {
     id: 'loom_kit',
-    name: 'Loom Kit',
-    description: 'Frame, beater and heddles. Fibre becomes cloth, hide becomes leather.',
     structure: 'loom',
     weight: 10,
   },
   {
     id: 'cooking_pot_kit',
-    name: 'Cooking Pot',
-    description: 'A beaten iron pot and tripod. Soups, stews and boiled water in quantity.',
     structure: 'cooking_pot',
     weight: 6,
   },
   {
     id: 'grindstone_kit',
-    name: 'Grindstone Kit',
-    description: 'A dressed wheel and a crank. Wheat into flour, edges back onto tools.',
     structure: 'grindstone',
     weight: 18,
   },
   {
     id: 'chemistry_bench_kit',
-    name: 'Chemistry Bench Kit',
-    description: 'Glassware, burner and a scavenged bench top. Medicine and powder.',
     structure: 'chemistry_bench',
     weight: 14,
     rarity: 'uncommon',
   },
 ];
 
-const PLACEABLES: ItemDef[] = [
+const PLACEABLES: ItemSource[] = [
   ...KIT_SPECS.map((spec) =>
     item({
       id: spec.id,
-      name: spec.name,
-      description: spec.description,
       category: 'placeable',
       stackSize: 5,
       weight: spec.weight,
@@ -2597,9 +2241,6 @@ const PLACEABLES: ItemDef[] = [
   ),
   item({
     id: 'torch',
-    name: 'Torch',
-    description:
-      'Resin-soaked fibre on a stick. Held it lights your way; driven into a wall it lights a room.',
     category: 'placeable',
     // Deliberately stackable and durability-free: a torch's burn life lives in
     // `fuel.burnTicks`, which is what the wall socket's `light.fuel` is filled from and
@@ -2614,8 +2255,6 @@ const PLACEABLES: ItemDef[] = [
   }),
   item({
     id: 'lantern',
-    name: 'Lantern',
-    description: 'Glass, wick and a reservoir. Brighter and far longer-lived than a torch.',
     category: 'placeable',
     stackSize: 1,
     weight: 1.4,
@@ -2635,44 +2274,32 @@ const PLACEABLES: ItemDef[] = [
 
 interface SchematicSpec {
   id: string;
-  name: string;
-  description: string;
   unlocks: string[];
 }
 
 const SCHEMATIC_SPECS: SchematicSpec[] = [
   {
     id: 'schematic_steel',
-    name: 'Schematic: Crucible Steel',
-    description: 'Water-stained notes on carburising iron. Hours of somebody else’s work.',
     unlocks: ['smelt_steel_ingot', 'forge_steel_axe', 'forge_steel_pickaxe'],
   },
   {
     id: 'schematic_crossbow',
-    name: 'Schematic: Crossbow',
-    description: 'Drawings of a prod, a nut and a trigger. Quiet, lethal, and not obvious.',
     unlocks: ['craft_crossbow'],
   },
   {
     id: 'schematic_ammunition',
-    name: 'Schematic: Handloading',
-    description: 'A reloading table torn from a manual. Charges, crimps, seating depths.',
     unlocks: ['forge_ammo_9mm', 'forge_ammo_308', 'forge_ammo_shell'],
   },
   {
     id: 'schematic_medicine',
-    name: 'Schematic: Field Pharmacy',
-    description: 'Culturing notes in a careful hand. How to grow a cure in a jar.',
     unlocks: ['make_antibiotics', 'make_first_aid_kit'],
   },
 ];
 
-const MISC: ItemDef[] = [
+const MISC: ItemSource[] = [
   ...SCHEMATIC_SPECS.map((spec) =>
     item({
       id: spec.id,
-      name: spec.name,
-      description: spec.description,
       category: 'misc',
       stackSize: 1,
       weight: 0.1,
@@ -2682,8 +2309,6 @@ const MISC: ItemDef[] = [
   ),
   item({
     id: 'door_key',
-    name: 'Door Key',
-    description: 'Cut for one lock somewhere. Worth carrying until you find out which.',
     category: 'misc',
     stackSize: 10,
     weight: 0.02,
@@ -2691,8 +2316,6 @@ const MISC: ItemDef[] = [
   }),
   item({
     id: 'lockpick',
-    name: 'Lockpick',
-    description: 'Bent wire and a tension bar. Opens what you did not build, sometimes.',
     category: 'misc',
     stackSize: 1,
     weight: 0.05,
@@ -2701,9 +2324,6 @@ const MISC: ItemDef[] = [
   }),
   item({
     id: 'compass',
-    name: 'Compass',
-    description:
-      'Points north whatever the weather does. Cheap insurance against walking in circles.',
     category: 'misc',
     stackSize: 1,
     weight: 0.1,
@@ -2712,8 +2332,6 @@ const MISC: ItemDef[] = [
   }),
   item({
     id: 'map',
-    name: 'Regional Map',
-    description: 'Folded, torn along the creases. Reveals the ground around you as you go.',
     category: 'misc',
     stackSize: 1,
     weight: 0.1,
@@ -2722,8 +2340,6 @@ const MISC: ItemDef[] = [
   }),
   item({
     id: 'radio',
-    name: 'Radio',
-    description: 'Mostly static. Occasionally a voice, and then you have a decision to make.',
     category: 'misc',
     stackSize: 1,
     weight: 0.9,
@@ -2732,8 +2348,6 @@ const MISC: ItemDef[] = [
   }),
   item({
     id: 'flashlight',
-    name: 'Flashlight',
-    description: 'A tight cone of light and a battery that is always nearly done.',
     category: 'misc',
     stackSize: 1,
     weight: 0.4,
@@ -2746,7 +2360,7 @@ const MISC: ItemDef[] = [
 // ---------------------------------------------------------------------------
 
 /** Every item definition in the game, in build-menu-ish reading order. */
-export const ITEM_DEFS: readonly ItemDef[] = [
+export const ITEM_DEFS: readonly ItemSource[] = [
   ...RESOURCES,
   ...TOOLS,
   ...MELEE_WEAPONS,

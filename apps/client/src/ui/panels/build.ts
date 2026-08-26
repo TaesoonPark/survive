@@ -2,6 +2,7 @@ import { SIM_HZ, type ItemStack, type PlayerState, type SkillId } from '@survive
 import type { StructureCategory, StructureDef, ToolKind } from '@survive/game-data';
 import { DEFAULT_STRUCTURE_COLOR, STRUCTURE_COLOR, UI, cssColor } from '../../art/palette';
 import { button, el, humanize, itemIconUrl, panelFrame } from '../kit';
+import { t } from '../strings';
 import type { Panel, UiContext } from '../panel';
 
 /**
@@ -768,7 +769,7 @@ export function createBuildPanel(): Panel {
 
   return {
     id: 'build',
-    title: 'Build',
+    title: t('panel.build'),
     // Deliberately false - see the file header. Select here, place in the world, so this
     // panel may not take the pointer or the keyboard away from the world.
     captures: false,

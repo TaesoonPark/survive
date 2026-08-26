@@ -56,9 +56,15 @@ export function notify(
   ctx: SimContext,
   player: PlayerState,
   severity: 'info' | 'warn' | 'error' | 'success',
-  text: string,
+  code: string,
+  params?: Record<string, string | number>,
 ): void {
-  ctx.events.emit({ type: 'notification', playerId: player.id, severity, text });
+  ctx.events.emit({
+    type: 'notification',
+    playerId: player.id,
+    severity,
+    message: params ? { code, params } : { code },
+  });
 }
 
 /** Tell a client its command was refused, and why. */

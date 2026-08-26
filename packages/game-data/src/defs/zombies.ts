@@ -1,4 +1,4 @@
-import type { ZombieDef } from '../types';
+import type { ZombieSource } from '../types';
 import { seconds } from './units';
 
 /**
@@ -24,10 +24,9 @@ import { seconds } from './units';
  * The spitter attacks at 300 px with no weapon item; the AI fires the `spitter_bile`
  * projectile def, since `ZombieDef` has no projectile field of its own.
  */
-export const ZOMBIE_DEFS: readonly ZombieDef[] = [
+export const ZOMBIE_DEFS: readonly ZombieSource[] = [
   {
     id: 'walker',
-    name: 'Walker',
     tier: 1,
     maxHealth: 90,
     bodyScale: 1,
@@ -62,7 +61,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'shambler',
-    name: 'Shambler',
     tier: 1,
     maxHealth: 190,
     bodyScale: 1.2,
@@ -97,7 +95,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'crawler',
-    name: 'Crawler',
     tier: 1,
     maxHealth: 55,
     bodyScale: 0.7,
@@ -133,7 +130,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'runner',
-    name: 'Runner',
     tier: 2,
     maxHealth: 70,
     bodyScale: 0.9,
@@ -168,7 +164,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'feral_dog_zombie',
-    name: 'Feral Dog',
     tier: 2,
     maxHealth: 60,
     bodyScale: 0.6,
@@ -204,7 +199,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'screamer',
-    name: 'Screamer',
     tier: 2,
     maxHealth: 80,
     bodyScale: 0.95,
@@ -240,7 +234,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'spitter',
-    name: 'Spitter',
     tier: 2,
     maxHealth: 100,
     bodyScale: 1,
@@ -276,7 +269,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'bloater',
-    name: 'Bloater',
     tier: 2,
     maxHealth: 230,
     bodyScale: 1.4,
@@ -312,7 +304,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'armored',
-    name: 'Armored Zombie',
     tier: 3,
     maxHealth: 200,
     bodyScale: 1.1,
@@ -348,7 +339,6 @@ export const ZOMBIE_DEFS: readonly ZombieDef[] = [
   },
   {
     id: 'brute',
-    name: 'Brute',
     tier: 3,
     maxHealth: 500,
     bodyScale: 1.8,

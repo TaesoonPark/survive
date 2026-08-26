@@ -1,5 +1,5 @@
 import { Biome } from '@survive/protocol';
-import type { AnimalDef } from '../types';
+import type { AnimalSource } from '../types';
 import { seconds } from './units';
 
 /**
@@ -19,10 +19,9 @@ import { seconds } from './units';
  * `skill` is `foraging` across the board: the weapon already grants melee or ranged XP
  * on the hit, so this field is the hunting-and-butchery half of the reward.
  */
-export const ANIMAL_DEFS: readonly AnimalDef[] = [
+export const ANIMAL_DEFS: readonly AnimalSource[] = [
   {
     id: 'rabbit',
-    name: 'Rabbit',
     maxHealth: 18,
     speedWalk: 55,
     speedRun: 210,
@@ -50,7 +49,6 @@ export const ANIMAL_DEFS: readonly AnimalDef[] = [
   },
   {
     id: 'chicken',
-    name: 'Chicken',
     maxHealth: 12,
     speedWalk: 40,
     speedRun: 110,
@@ -73,7 +71,6 @@ export const ANIMAL_DEFS: readonly AnimalDef[] = [
   },
   {
     id: 'fox',
-    name: 'Fox',
     maxHealth: 35,
     speedWalk: 70,
     speedRun: 215,
@@ -96,7 +93,6 @@ export const ANIMAL_DEFS: readonly AnimalDef[] = [
   },
   {
     id: 'deer',
-    name: 'Deer',
     maxHealth: 70,
     speedWalk: 70,
     speedRun: 265,
@@ -119,7 +115,6 @@ export const ANIMAL_DEFS: readonly AnimalDef[] = [
   },
   {
     id: 'cow',
-    name: 'Cow',
     maxHealth: 150,
     speedWalk: 35,
     speedRun: 95,
@@ -142,7 +137,6 @@ export const ANIMAL_DEFS: readonly AnimalDef[] = [
   },
   {
     id: 'boar',
-    name: 'Boar',
     maxHealth: 110,
     speedWalk: 55,
     speedRun: 175,
@@ -165,7 +159,6 @@ export const ANIMAL_DEFS: readonly AnimalDef[] = [
   },
   {
     id: 'wolf',
-    name: 'Wolf',
     maxHealth: 85,
     speedWalk: 80,
     speedRun: 235,
@@ -188,7 +181,6 @@ export const ANIMAL_DEFS: readonly AnimalDef[] = [
   },
   {
     id: 'bear',
-    name: 'Bear',
     maxHealth: 260,
     speedWalk: 65,
     speedRun: 200,

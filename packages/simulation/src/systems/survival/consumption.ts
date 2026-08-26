@@ -299,14 +299,7 @@ function eat(
     0,
     1,
   );
-  rollSickness(
-    ctx,
-    player,
-    sickness,
-    'food_poisoning',
-    `food:${def.id}`,
-    'That was a mistake. Your stomach turns.',
-  );
+  rollSickness(ctx, player, sickness, 'food_poisoning', `food:${def.id}`, 'notify.foodPoisoning');
 
   applyEffectGrants(ctx, player, food.effects, `food:${def.id}`);
   if (player.hunger <= WELL_FED_HUNGER) {
@@ -518,12 +511,10 @@ export function treatBodyPart(
       itemDefId: def.id,
       success: false,
     });
-    notify(
-      ctx,
-      player,
-      'warn',
-      `You botch the ${med.kind} on your ${BODY_PART_LABELS[bodyPart].toLowerCase()}.`,
-    );
+    notify(ctx, player, 'warn', 'notify.botchedTreatment', {
+      treatment: med.kind,
+      part: BODY_PART_LABELS[bodyPart],
+    });
     // Not a refusal: the item is gone and the player is worse off, which is the whole
     // point of trying to stitch yourself up below the skill for it.
     return accepted(wasted, med.useTicks, true);

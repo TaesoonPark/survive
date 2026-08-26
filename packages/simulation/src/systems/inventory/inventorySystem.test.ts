@@ -675,7 +675,7 @@ describe('sortContainer', () => {
 
     sim.run(player, { type: 'sortContainer', ref: INVENTORY });
 
-    expect(sim.lastEvent('notification')?.text).toMatch(/tidy/i);
+    expect(sim.lastEvent('notification')?.message.code).toBe('notify.alreadyTidy');
   });
 
   it('sorts a structure container that is open', () => {
@@ -857,7 +857,7 @@ describe('takeAll', () => {
 
     expect(container.slots[0]).toBeNull();
     expect(container.slots[1]?.defId).toBe('stone_hatchet');
-    expect(sim.lastEvent('notification')?.text).toMatch(/filled up/i);
+    expect(sim.lastEvent('notification')?.message.code).toBe('notify.inventoryFull');
   });
 
   it('refuses an empty container and one that is out of reach', () => {
@@ -1049,7 +1049,7 @@ describe('equipItem and unequipItem', () => {
     expect(onGround.length).toBeGreaterThan(0);
     expect(onGround.every((entity) => entity.stack.defId === 'stone_hatchet')).toBe(true);
     expect(player.inventory.slots.some((slot) => slot?.defId === 'backpack_large')).toBe(true);
-    expect(sim.lastEvent('notification')?.text).toMatch(/ground/i);
+    expect(sim.lastEvent('notification')?.message.code).toBe('notify.someItemsDropped');
   });
 
   /**
@@ -1238,7 +1238,7 @@ describe('useItem', () => {
 
     sim.run(player, { type: 'useItem', ref: INVENTORY, index: 0 });
 
-    expect(sim.lastEvent('notification')?.text).toMatch(/plot/i);
+    expect(sim.lastEvent('notification')?.message.code).toBe('notify.plantOnPlot');
     expect(player.inventory.slots[0]?.count).toBe(3);
   });
 
@@ -1597,7 +1597,7 @@ describe('setLock', () => {
     sim.run(player, { type: 'setLock', structureId: door.id, code: 'abc' });
 
     expect(door.door?.locked).toBe(true);
-    expect(sim.lastEvent('notification')?.text).toMatch(/locked/i);
+    expect(sim.lastEvent('notification')?.message.code).toBe('notify.locked');
   });
 });
 

@@ -67,19 +67,19 @@ import {
 /** Wording for each need's warnings, so the three arcs read consistently. */
 const NEED_MESSAGES = {
   hunger: {
-    warn: 'You are getting hungry.',
-    urgent: 'You are famished. Find food.',
-    critical: 'You are starving to death.',
+    warn: 'notify.need.hunger.warn',
+    urgent: 'notify.need.hunger.urgent',
+    critical: 'notify.need.hunger.critical',
   },
   thirst: {
-    warn: 'Your throat is dry.',
-    urgent: 'You are badly dehydrated. Find water.',
-    critical: 'You are dying of thirst.',
+    warn: 'notify.need.thirst.warn',
+    urgent: 'notify.need.thirst.urgent',
+    critical: 'notify.need.thirst.critical',
   },
   fatigue: {
-    warn: 'You are tired.',
-    urgent: 'You can barely keep your eyes open.',
-    critical: 'You are collapsing from exhaustion.',
+    warn: 'notify.need.fatigue.warn',
+    urgent: 'notify.need.fatigue.urgent',
+    critical: 'notify.need.fatigue.critical',
   },
 } as const;
 

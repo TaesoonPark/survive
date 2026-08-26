@@ -1,4 +1,4 @@
-import type { CropDef } from '../types';
+import type { CropSource } from '../types';
 import { days } from './units';
 
 /**
@@ -20,10 +20,9 @@ import { days } from './units';
  * `blightChance` is per tick, so the numbers look absurdly small on purpose: 2e-6 over
  * a five-day crop is roughly a one-in-four risk across its whole life.
  */
-export const CROP_DEFS: readonly CropDef[] = [
+export const CROP_DEFS: readonly CropSource[] = [
   {
     id: 'wheat',
-    name: 'Wheat',
     seedDefId: 'seed_wheat',
     produceDefId: 'wheat',
     stages: 5,
@@ -45,7 +44,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'corn',
-    name: 'Corn',
     seedDefId: 'seed_corn',
     produceDefId: 'corn',
     stages: 6,
@@ -67,7 +65,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'potato',
-    name: 'Potato',
     seedDefId: 'seed_potato',
     produceDefId: 'potato',
     stages: 4,
@@ -89,7 +86,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'carrot',
-    name: 'Carrot',
     seedDefId: 'seed_carrot',
     produceDefId: 'carrot',
     stages: 4,
@@ -111,7 +107,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'tomato',
-    name: 'Tomato',
     seedDefId: 'seed_tomato',
     produceDefId: 'tomato',
     stages: 5,
@@ -134,7 +129,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'cabbage',
-    name: 'Cabbage',
     seedDefId: 'seed_cabbage',
     produceDefId: 'cabbage',
     stages: 4,
@@ -160,7 +154,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'pumpkin',
-    name: 'Pumpkin',
     seedDefId: 'seed_pumpkin',
     produceDefId: 'pumpkin',
     stages: 6,
@@ -184,7 +177,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'onion',
-    name: 'Onion',
     seedDefId: 'seed_onion',
     produceDefId: 'onion',
     stages: 4,
@@ -206,7 +198,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'beans',
-    name: 'Beans',
     seedDefId: 'seed_beans',
     produceDefId: 'beans',
     stages: 5,
@@ -230,7 +221,6 @@ export const CROP_DEFS: readonly CropDef[] = [
   },
   {
     id: 'herb',
-    name: 'Medicinal Herb',
     seedDefId: 'seed_herb',
     produceDefId: 'herb',
     stages: 3,

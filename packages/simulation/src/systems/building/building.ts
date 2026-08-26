@@ -684,7 +684,7 @@ function completeStructure(
     type: 'notification',
     ...(builder ? { playerId: builder.id } : {}),
     severity: 'success',
-    text: `${def.name} finished`,
+    message: { code: 'notify.structureFinished', params: { structure: def.name } },
   });
 }
 

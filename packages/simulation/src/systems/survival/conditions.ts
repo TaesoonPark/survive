@@ -67,9 +67,9 @@ export function applyConditionEffects(ctx: SimContext, player: PlayerState): voi
   // The two conditions worth interrupting the player for. Everything else is
   // visible in the HUD and does not need a toast.
   if (!wasHypothermic && hasEffect(player, 'hypothermia')) {
-    notify(ctx, player, 'error', 'Hypothermia. You need warmth now.');
+    notify(ctx, player, 'error', 'notify.hypothermia');
   }
   if (!wasHeatstruck && hasEffect(player, 'heatstroke')) {
-    notify(ctx, player, 'error', 'Heatstroke. Get out of the sun and drink.');
+    notify(ctx, player, 'error', 'notify.heatstroke');
   }
 }

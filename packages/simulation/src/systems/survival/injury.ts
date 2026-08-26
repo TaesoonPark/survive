@@ -108,10 +108,10 @@ export function stepBleeding(ctx: SimContext, player: PlayerState, tick: Surviva
   // Two warnings on the way down, each fired once on the crossing rather than every
   // tick below the line: the HUD already shows the number, this is the interruption.
   if (crossedDown(bloodBefore, player.blood, LOW_BLOOD)) {
-    notify(ctx, player, 'warn', 'You have lost a lot of blood. Stop the bleeding.');
+    notify(ctx, player, 'warn', 'notify.bloodLossWarn');
   }
   if (crossedDown(bloodBefore, player.blood, CRITICAL_BLOOD)) {
-    notify(ctx, player, 'error', 'You are bleeding out.');
+    notify(ctx, player, 'error', 'notify.bleedingOut');
   }
 
   if (player.blood <= 0) {
@@ -215,13 +215,13 @@ export function stepInfection(ctx: SimContext, player: PlayerState, tick: Surviv
   // Onset only. Each of these is an escalation the player has to act on, and the
   // window to act on it closes.
   if (!hadFever && hasEffect(player, 'fever')) {
-    notify(ctx, player, 'warn', 'A wound has gone bad. You are running a fever.');
+    notify(ctx, player, 'warn', 'notify.woundInfected');
   }
   if (!hadSepsis && hasEffect(player, 'sepsis')) {
-    notify(ctx, player, 'error', 'The infection is systemic. You need antibiotics.');
+    notify(ctx, player, 'error', 'notify.infectionSystemic');
   }
   if (!wasTurning && hasEffect(player, 'zombification')) {
-    notify(ctx, player, 'error', 'The bite is turning. There is not much time.');
+    notify(ctx, player, 'error', 'notify.biteTurning');
   }
 
   if (worst >= 100 && worstIsBite) {
@@ -264,7 +264,7 @@ export function stepPain(ctx: SimContext, player: PlayerState, tick: SurvivalTic
   const rng = ctx.rng.fork(`survival:blackout:${player.id}:${ctx.state.tick}`);
   if (!rng.chance(BLACKOUT_CHANCE_PER_SECOND * dt * (pain / 100))) return;
   player.actionLockedUntilTick = ctx.state.tick + Math.max(1, Math.round(BLACKOUT_SECONDS / dt));
-  notify(ctx, player, 'error', 'The pain whites everything out.');
+  notify(ctx, player, 'error', 'notify.painBlackout');
 }
 
 /** Whether a part is in a state where new tissue can grow. */
@@ -325,7 +325,7 @@ export function stepHealing(ctx: SimContext, player: PlayerState, tick: Survival
 
   for (const id of mended) {
     ctx.events.emit({ type: 'heal', targetId: player.id, amount: 0, bodyPart: id });
-    notify(ctx, player, 'success', `Your ${BODY_PART_LABELS[id].toLowerCase()} has mended.`);
+    notify(ctx, player, 'success', 'notify.partMended', { part: BODY_PART_LABELS[id] });
   }
   if (healed > 0 || mended.length > 0) syncHealthFromBody(player);
 }

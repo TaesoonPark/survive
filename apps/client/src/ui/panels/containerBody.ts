@@ -23,6 +23,7 @@ import {
   statBar,
 } from '../kit';
 import { attachTooltip } from '../tooltip';
+import { t } from '../strings';
 import type { DragState, DropTarget, Panel, UiContext } from '../panel';
 
 /**
@@ -458,7 +459,7 @@ export function createContainerPanel(): Panel {
 
   return {
     id: 'container',
-    title: 'Container',
+    title: t('panel.container'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {
@@ -1082,7 +1083,7 @@ export function createBodyPanel(): Panel {
 
   return {
     id: 'body',
-    title: 'Body',
+    title: t('panel.body'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {

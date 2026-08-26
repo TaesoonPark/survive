@@ -417,7 +417,10 @@ export function handleRefuel(
     type: 'notification',
     playerId: player.id,
     severity: 'success',
-    text: `Added ${taken.count} x ${itemDef.name} to the ${ref.def.name.toLowerCase()}.`,
+    message: {
+      code: 'notify.addedToStation',
+      params: { count: taken.count, item: itemDef.name, station: ref.def.name },
+    },
   });
 }
 

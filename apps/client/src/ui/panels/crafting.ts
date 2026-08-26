@@ -17,6 +17,7 @@ import {
 } from '@survive/game-data';
 import { UI, cssColor } from '../../art/palette';
 import { button, el, humanize, itemIconUrl, itemSlot, itemTooltip, panelFrame } from '../kit';
+import { t } from '../strings';
 import type { Panel, UiContext } from '../panel';
 
 /**
@@ -1194,7 +1195,7 @@ export function createCraftingPanel(): Panel {
 
   return {
     id: 'crafting',
-    title: 'Crafting',
+    title: t('panel.crafting'),
     captures: true,
 
     mount(ctx: UiContext): HTMLElement {

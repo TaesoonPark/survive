@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { Biome, TICKS_PER_GAME_DAY } from '@survive/protocol';
-import type { ItemDef, LootTableDef, ResourceNodeDef, StationKind, ToolKind } from './types';
+import type {
+  ItemDef,
+  ItemSource,
+  LootTableDef,
+  ResourceNodeSource,
+  StationKind,
+  ToolKind,
+} from './types';
 import { createRegistry } from './registry';
 import {
   GameDataValidationError,
@@ -9,11 +16,21 @@ import {
   computeDataVersion,
   createGameData,
   defaultTables,
+  localizeTables,
   validateGameData,
 } from './gameData';
 
 const data = createGameData();
 const tables = defaultTables();
+/**
+ * The shipped tables with their text merged in.
+ *
+ * `defaultTables()` returns definitions as authored - numbers, no words - because the
+ * locale supplies the text later. Anything that wants a finished `GameData` has to go
+ * through the same merge `createGameData` does, or it is checking a table the game never
+ * actually runs on.
+ */
+const localized = localizeTables(tables);
 
 // ---------------------------------------------------------------------------
 // Registry
@@ -249,7 +266,6 @@ describe('validateGameData', () => {
       recipes: [
         {
           id: 'craft_broken',
-          name: 'Broken',
           category: 'basic',
           inputs: [{ defId: 'unobtainium', count: 1 }],
           tools: [],
@@ -292,7 +308,7 @@ describe('validateGameData', () => {
   });
 
   it('catches a node yield that points at nothing', () => {
-    const node = tables.nodes[0] as ResourceNodeDef;
+    const node = tables.nodes[0] as ResourceNodeSource;
     const problems = collectGameDataProblems({
       ...tables,
       nodes: [{ ...node, yields: [{ defId: 'unobtainium', min: 1, max: 1, chance: 1 }] }],
@@ -372,8 +388,8 @@ describe('validateGameData', () => {
   });
 
   it('buildGameData skips validation, so tests can build deliberately broken data', () => {
-    expect(() => buildGameData({ ...tables, recipes: [] })).not.toThrow();
-    expect(buildGameData({ ...tables, recipes: [] }).recipes.size).toBe(0);
+    expect(() => buildGameData({ ...localized, recipes: [] })).not.toThrow();
+    expect(buildGameData({ ...localized, recipes: [] }).recipes.size).toBe(0);
   });
 });
 
@@ -388,7 +404,7 @@ describe('validateGameData', () => {
  * place they can be caught.
  */
 describe('validateGameData enforces documented ranges', () => {
-  const patchItem = (id: string, patch: (def: ItemDef) => ItemDef): string[] =>
+  const patchItem = (id: string, patch: (def: ItemSource) => ItemSource): string[] =>
     collectGameDataProblems({
       ...tables,
       items: tables.items.map((item) => (item.id === id ? patch(item) : item)),
@@ -482,7 +498,6 @@ describe('validateGameData enforces documented ranges', () => {
       recipes: [
         {
           id: 'craft_tagged',
-          name: 'Tagged',
           category: 'basic',
           inputs: [{ defId: 'clothh_rag', count: 1, tag: 'fibre_source' }],
           tools: [],
@@ -517,10 +532,10 @@ describe('validateGameData enforces documented ranges', () => {
  */
 function reachableItems(): Set<string> {
   const reachable = new Set<string>();
-  const nodeYields = (node: ResourceNodeDef): string[] =>
+  const nodeYields = (node: ResourceNodeSource): string[] =>
     [...node.yields, ...node.yieldPerHit].map((entry) => entry.defId);
 
-  const bareHanded = (node: ResourceNodeDef): boolean =>
+  const bareHanded = (node: ResourceNodeSource): boolean =>
     node.toolKinds.length === 0 || node.wrongToolMultiplier > 0;
 
   for (const node of tables.nodes) {

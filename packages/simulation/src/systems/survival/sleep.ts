@@ -171,7 +171,7 @@ export function handleSleep(
 
   sleepers.add(player.id);
   ctx.events.emit({ type: 'sleepStarted', playerId: player.id, structureId: structure.id });
-  notify(ctx, player, 'info', 'You settle down to sleep.');
+  notify(ctx, player, 'info', 'notify.sleep.start');
 }
 
 /** The `wake` command: get up on purpose. */
@@ -186,12 +186,12 @@ export function handleWake(ctx: SimContext, player: PlayerState, sleepers: Sleep
 
 /** Wording for each way a night can end. */
 const WAKE_MESSAGES: Record<WakeReason, string> = {
-  commanded: 'You get up.',
-  rested: 'You wake up rested.',
-  threat: 'Something moving nearby drags you awake.',
-  moved: 'You stir and get up.',
-  bedLost: 'Your bed is gone. You wake on the ground.',
-  died: 'You died in your sleep.',
+  commanded: 'notify.wake.commanded',
+  rested: 'notify.wake.rested',
+  threat: 'notify.wake.threat',
+  moved: 'notify.wake.moved',
+  bedLost: 'notify.wake.bedLost',
+  died: 'notify.wake.died',
 };
 
 /**

@@ -12,6 +12,16 @@
 export * from './types';
 export * from './registry';
 export * from './gameData';
+export {
+  DEFAULT_LOCALE,
+  localize,
+  localizeDescribed,
+  stringTable,
+  type DisplayText,
+  type Locale,
+  type StringTable,
+  type TextKind,
+} from './strings';
 
 export { ITEM_DEFS } from './defs/items';
 export { RECIPE_DEFS } from './defs/recipes';
