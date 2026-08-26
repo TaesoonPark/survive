@@ -10,7 +10,7 @@ import { joinServer, net, openClient, pageErrors, self, waitForTicks, world } fr
 test.describe('session', () => {
   test('joins a real server and holds authoritative state', async ({ page }) => {
     await openClient(page);
-    await joinServer(page, 'Tester');
+    await joinServer(page);
 
     const player = await self(page);
     expect(player.alive).toBe(true);

@@ -110,7 +110,12 @@ export class GameScene extends Phaser.Scene {
 
     this.terrain = new TerrainRenderer(this);
     this.entities = new EntityRenderer(this, this.gameData);
-    this.effects = new EffectsRenderer(this, () => this.session.self?.id ?? null, this.gameData);
+    this.effects = new EffectsRenderer(
+      this,
+      () => this.session.self?.id ?? null,
+      this.gameData,
+      () => (this.session.isConnected ? this.session.renderPosition : null),
+    );
     this.atmosphere = new AtmosphereRenderer(this, this.gameData);
     this.controls = new Controls(this);
 

@@ -1,14 +1,21 @@
 import type { LocalizedMessage } from '@survive/protocol';
 import { EN_UI } from './en';
-import type { UiLocale, UiStringTable } from './types';
+import { KO_UI } from './ko';
+import { detectLocale, type UiLocale } from './detect';
+import type { UiStringTable } from './types';
 
-export type { UiLocale, UiStringTable };
+export { DEFAULT_UI_LOCALE, resolveLocale, SUPPORTED_LOCALES, type UiLocale } from './detect';
+export type { UiStringTable };
 
-const TABLES: Record<UiLocale, UiStringTable> = { en: EN_UI };
+const TABLES: Record<UiLocale, UiStringTable> = { en: EN_UI, ko: KO_UI };
 
-export const DEFAULT_UI_LOCALE: UiLocale = 'en';
-
-let active: UiLocale = DEFAULT_UI_LOCALE;
+/**
+ * Resolved as this module initialises, not later.
+ *
+ * Panels build label tables as module constants, so `t()` runs at import time. Choosing the
+ * language in a boot scene would be too late for those - they would already hold English.
+ */
+let active: UiLocale = detectLocale();
 
 /**
  * Choose the interface language.

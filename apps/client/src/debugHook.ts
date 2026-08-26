@@ -101,6 +101,13 @@ export interface SurviveDebugHook {
    * reports the tree as undamaged.
    */
   focusId(): string | null;
+  /**
+   * Display name for an item definition, in the language the client is running in.
+   *
+   * Exists so a test can check that the *content* tables were built in the chosen locale,
+   * which is a different question from whether the interface chrome was translated.
+   */
+  itemName(defId: string): string | null;
   /** Send an intent. Validated server-side like any other. */
   send(command: Command): void;
   /** Panel ids currently open. */
@@ -203,6 +210,9 @@ export function installDebugHook(
     },
     entity(id: string) {
       return session.store.entity(id) ?? null;
+    },
+    itemName(defId: string) {
+      return session.data.items.get(defId)?.name ?? null;
     },
     send(command: Command) {
       session.send(command);

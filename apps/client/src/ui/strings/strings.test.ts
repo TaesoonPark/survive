@@ -8,7 +8,8 @@ import {
   type EntitySnapshotKind,
 } from '@survive/protocol';
 import { EN_UI } from './en';
-import { notifyText, rejectText, t } from './index';
+import { KO_UI } from './ko';
+import { notifyText, rejectText, setUiLocale, t, type UiLocale } from './index';
 
 /** Every `t('...')` and `t(\`...\`)` key the client actually asks for. */
 function askedKeys(dir: string): { key: string; file: string }[] {
@@ -26,7 +27,7 @@ function askedKeys(dir: string): { key: string; file: string }[] {
       // choose between two keys with a ternary - `t(open ? 'a' : 'b')` - and a scan anchored
       // on the call would report both as unused.
       for (const match of source.matchAll(
-        /'((?:panel|vital|hotbar|prompt|tip|toast|chip)\.[A-Za-z.]+)'/g,
+        /'((?:panel|vital|hotbar|prompt|tip|toast|chip|inv|cb|build|map|session|menu|craft)\.[A-Za-z.]+)'/g,
       )) {
         out.push({ key: match[1]!, file: entry });
       }
@@ -59,7 +60,18 @@ describe('interface text', () => {
   it('has no entry nothing asks for', () => {
     // Templated keys are built at runtime from closed sets, so they are listed by prefix
     // rather than found in the source.
-    const templated = ['effect.', 'bodyPart.', 'skill.', 'entity.'];
+    const templated = [
+      'effect.',
+      'bodyPart.',
+      'skill.',
+      'entity.',
+      'damage.',
+      'tool.',
+      'station.',
+      'medical.',
+      'craft.cat.',
+      'biome.',
+    ];
     const literal = new Set(asked.map((a) => a.key));
     const orphans = Object.keys(EN_UI.ui).filter(
       (key) => !literal.has(key) && !templated.some((prefix) => key.startsWith(prefix)),
@@ -92,6 +104,72 @@ describe('interface text', () => {
       ];
       for (const kind of kinds) expect(EN_UI.ui[`entity.${kind}`], kind).toBeTruthy();
     });
+  });
+
+  const locales: UiLocale[] = ['en', 'ko'];
+
+  it.each(locales)('%s has every key, and no key nothing asks for', (locale) => {
+    // Both directions, for every shipped language: a second locale is only useful if it is
+    // as complete as the first, and a stale key is a translator's wasted afternoon.
+    setUiLocale(locale);
+    try {
+      const table = locale === 'en' ? EN_UI : KO_UI;
+      const expected = Object.keys(EN_UI.ui).sort();
+      expect(Object.keys(table.ui).sort()).toEqual(expected);
+      expect(Object.keys(table.notify).sort()).toEqual(Object.keys(EN_UI.notify).sort());
+      expect(Object.keys(table.reject).sort()).toEqual(Object.keys(EN_UI.reject).sort());
+    } finally {
+      setUiLocale('en');
+    }
+  });
+
+  it('keeps the same placeholders in every language', () => {
+    // A dropped `{count}` is a sentence with a hole in it; an invented one renders literally.
+    // Word *order* is free to change - that is the whole reason these are templates.
+    const holes = (value: string): string[] =>
+      [...value.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!).sort();
+    for (const section of ['notify', 'reject', 'ui'] as const) {
+      for (const [key, english] of Object.entries(EN_UI[section])) {
+        expect(holes(KO_UI[section][key]!), `ko ${section}.${key}`).toEqual(holes(english));
+      }
+    }
+  });
+
+  it('actually translates, rather than copying the English', () => {
+    // Some entries legitimately read the same in both languages: a product name, a unit,
+    // an abbreviation, or a string that is nothing but placeholders. What none of them may
+    // be is *prose* - so instead of tolerating a magic number of matches, this asks what is
+    // left of a matching entry once the placeholders and punctuation are removed. More than
+    // one word left means an English sentence was copied across and never translated.
+    const proseWords = (value: string): string[] =>
+      value
+        .replace(/\{\w+\}/g, ' ')
+        .replace(/[^A-Za-z ]/g, ' ')
+        .split(/\s+/)
+        .filter((word) => word.length > 0);
+    for (const section of ['notify', 'reject', 'ui'] as const) {
+      for (const [key, english] of Object.entries(EN_UI[section])) {
+        if (KO_UI[section][key] !== english) continue;
+        const words = proseWords(english);
+        expect(words.length, `untranslated ${section}.${key}: ${english}`).toBeLessThan(2);
+      }
+    }
+  });
+
+  it('renders a Korean message with its values in Korean word order', () => {
+    setUiLocale('ko');
+    try {
+      const text = notifyText({
+        code: 'notify.addedToStation',
+        params: { count: 3, item: '통나무', station: '모닥불' },
+      });
+      // The station leads and the verb trails, the reverse of the English. This is the case
+      // that a `text: string` from the server could not have produced.
+      expect(text).toBe('모닥불에 통나무 3개를 넣었습니다.');
+      expect(text.indexOf('모닥불')).toBeLessThan(text.indexOf('통나무'));
+    } finally {
+      setUiLocale('en');
+    }
   });
 
   it('fills in the values a message carries', () => {

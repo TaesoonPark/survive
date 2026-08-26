@@ -17,6 +17,9 @@ interface NodeProbe {
  * fibre grass, which depletes on the first harvest and is removed from the client - so the
  * counter being watched vanishes and the test reads as a failure of the repeat. A tree or a
  * boulder has health in the hundreds and takes a dozen swings.
+ *
+ * Which nodes are within reach is whatever the world generated near the spawn point, hence
+ * the search rather than a fixed target.
  */
 async function sturdyNode(page: Page, minHealth = 60): Promise<NodeProbe | null> {
   return page.evaluate((floor) => {
@@ -90,8 +93,9 @@ test.describe('gathering', () => {
     await joinServer(page);
     await waitForTicks(page, 20);
 
-    // One walk, three assertions. Split across two tests, the second had to find a tree of
-    // its own - and the first had just spent a while felling the only one in range.
+    // One walk, three assertions, one tree. Split across two tests, the second had to find
+    // a tree of its own - and the first had just spent a while felling the only one in
+    // range of that character's spawn.
     const node = await sturdyNode(page);
     expect(node, 'expected a tree or boulder within streaming range').not.toBeNull();
     expect(await reach(page, node!), 'expected it to become the interaction target').toBe(true);

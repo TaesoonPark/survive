@@ -1,6 +1,5 @@
 import {
   BODY_PART_IDS,
-  BODY_PART_LABELS,
   SIM_HZ,
   totalPain,
   type BodyPartId,
@@ -240,7 +239,7 @@ export function createContainerPanel(): Panel {
       className: 'grid cb-grid',
       attrs: {
         role: 'group',
-        'aria-label': 'Container slots',
+        'aria-label': t('cb.containerSlots'),
         'data-testid': 'container-grid',
       },
     });
@@ -253,7 +252,7 @@ export function createContainerPanel(): Panel {
       className: 'grid cb-grid',
       attrs: {
         role: 'group',
-        'aria-label': 'Your inventory slots',
+        'aria-label': t('cb.yourSlots'),
         'data-testid': 'container-inventory-grid',
       },
     });
@@ -277,7 +276,7 @@ export function createContainerPanel(): Panel {
                   children: [
                     // The container's own name is in the title bar; this column only has
                     // to say which of the two grids it is.
-                    el('span', { className: 'section-title', text: 'Contents' }),
+                    el('span', { className: 'section-title', text: t('cb.contents') }),
                     containerCount,
                   ],
                 }),
@@ -290,7 +289,7 @@ export function createContainerPanel(): Panel {
                 el('div', {
                   className: 'cb-col-head',
                   children: [
-                    el('span', { className: 'section-title', text: 'Your Pack' }),
+                    el('span', { className: 'section-title', text: t('cb.yourPack') }),
                     packCount,
                   ],
                 }),
@@ -303,7 +302,7 @@ export function createContainerPanel(): Panel {
         el('p', {
           className: 'muted cb-hint',
           attrs: { 'data-testid': 'container-hint' },
-          text: 'Shift-click to move across · drag to place exactly · drag out to drop',
+          text: t('cb.dragHint'),
         }),
       ],
     });
@@ -354,7 +353,7 @@ export function createContainerPanel(): Panel {
       attrs: {
         type: 'button',
         'data-testid': `${testid}-${index}`,
-        'aria-label': `${label} slot ${index + 1}: ${stackLabel(stack, ctx)}`,
+        'aria-label': t('cb.slotAria', { label, index: index + 1, item: stackLabel(stack, ctx) }),
       },
       children: [visual],
     });
@@ -435,13 +434,13 @@ export function createContainerPanel(): Panel {
   }
 
   function renderActions(ctx: UiContext, view: Parts, container: OpenContainerView): void {
-    const takeAll = button('Take All', () =>
+    const takeAll = button(t('cb.takeAll'), () =>
       ctx.send({ type: 'takeAll', structureId: container.structureId }),
     );
     takeAll.setAttribute('data-testid', 'container-take-all');
-    takeAll.setAttribute('aria-label', 'Take everything from the container');
+    takeAll.setAttribute('aria-label', t('cb.takeAllHint'));
 
-    const sortContainer = button('Sort Container', () =>
+    const sortContainer = button(t('cb.sortContainer'), () =>
       ctx.send({
         type: 'sortContainer',
         ref: { kind: 'structure', structureId: container.structureId },
@@ -449,7 +448,7 @@ export function createContainerPanel(): Panel {
     );
     sortContainer.setAttribute('data-testid', 'container-sort');
 
-    const sortPack = button('Sort Pack', () =>
+    const sortPack = button(t('cb.sortPack'), () =>
       ctx.send({ type: 'sortContainer', ref: { kind: 'inventory' } }),
     );
     sortPack.setAttribute('data-testid', 'container-sort-inventory');
@@ -468,7 +467,7 @@ export function createContainerPanel(): Panel {
       // Forget the cached signature so the first update draws from scratch.
       signature = '';
       const root = panelFrame(
-        'Container',
+        t('panel.container'),
         () => ctx.close('container'),
         view.body,
         'panel--container',
@@ -480,7 +479,7 @@ export function createContainerPanel(): Panel {
       // is, and the close button's label is an icon that needs a name.
       view.heading = root.querySelector<HTMLHeadingElement>('.panel-head h2');
       const close = root.querySelector<HTMLButtonElement>('.panel-head button');
-      close?.setAttribute('aria-label', 'Close container');
+      close?.setAttribute('aria-label', t('cb.closeContainer'));
       close?.setAttribute('data-testid', 'container-close');
       return root;
     },
@@ -495,7 +494,7 @@ export function createContainerPanel(): Panel {
         // and the scene has not caught up. One frame, usually; say something honest.
         if (signature === 'closed') return;
         signature = 'closed';
-        if (view.heading) view.heading.textContent = 'Container';
+        if (view.heading) view.heading.textContent = t('panel.container');
         view.containerCount.textContent = '';
         view.packCount.textContent = '';
         view.packCount.classList.remove('cb-count--over');
@@ -506,7 +505,7 @@ export function createContainerPanel(): Panel {
         view.actions.replaceChildren(
           el('p', {
             className: 'muted',
-            text: 'The container is no longer open.',
+            text: t('cb.containerClosed'),
             attrs: { 'data-testid': 'container-closed' },
           }),
         );
@@ -539,8 +538,11 @@ export function createContainerPanel(): Panel {
       signature = next;
 
       if (view.heading && view.heading.textContent !== name) view.heading.textContent = name;
-      view.containerCount.textContent = `${filled}/${capacity} slots`;
-      view.packCount.textContent = `${player.carryWeight.toFixed(1)}/${player.carryCapacity.toFixed(1)} kg`;
+      view.containerCount.textContent = t('cb.slotsUsed', { used: filled, total: capacity });
+      view.packCount.textContent = t('cb.carried', {
+        carried: player.carryWeight.toFixed(1),
+        capacity: player.carryCapacity.toFixed(1),
+      });
       view.packCount.classList.toggle('cb-count--over', overloaded);
 
       const containerRef: ContainerRef = { kind: 'structure', structureId: container.structureId };
@@ -564,7 +566,7 @@ export function createContainerPanel(): Panel {
         player.inventory.slots,
         player.inventory.capacity,
         'container-inventory-slot',
-        'Pack',
+        t('cb.pack'),
       );
       renderActions(ctx, view, container);
     },
@@ -677,7 +679,7 @@ function applicability(
     if (med.infectionCure > 0 && anyInfection) return { ok: true, why: '' };
     if (med.heal > 0 && anyWound) return { ok: true, why: '' };
     if ((med.effects?.length ?? 0) > 0) return { ok: true, why: '' };
-    return { ok: false, why: 'Nothing for it to act on right now.' };
+    return { ok: false, why: t('cb.nothingToTreat') };
   }
 
   switch (med.kind) {
@@ -763,15 +765,13 @@ function partBar(part: BodyPartState): HTMLDivElement {
 function partChips(part: BodyPartState): HTMLSpanElement[] {
   const chips: HTMLSpanElement[] = [];
   if (part.bleeding > 0) {
-    chips.push(
-      chip(`bleeding ${part.bleeding.toFixed(1)}/s`, 'bad', 'Blood units lost per second'),
-    );
+    chips.push(chip(`bleeding ${part.bleeding.toFixed(1)}/s`, 'bad', t('cb.bleedRateHint')));
   }
   if (part.fractured) {
     chips.push(
       part.splinted
-        ? chip('fractured · splinted', 'neutral', 'Set, but still broken')
-        : chip('fractured', 'bad', 'Unset: needs a splint'),
+        ? chip('fractured · splinted', 'neutral', t('cb.setButBroken'))
+        : chip('fractured', 'bad', t('cb.needsSplint')),
     );
   } else if (part.splinted) {
     chips.push(chip('splinted', 'good'));
@@ -790,7 +790,7 @@ function partChips(part: BodyPartState): HTMLSpanElement[] {
   if (part.pain > 0) {
     chips.push(chip(`pain ${Math.round(part.pain)}`, part.pain >= 40 ? 'bad' : 'neutral'));
   }
-  if (part.stitched) chips.push(chip('stitched', 'good', 'The wound is closed'));
+  if (part.stitched) chips.push(chip('stitched', 'good', t('cb.woundClosed')));
   if (part.bandaged) {
     const clean = part.bandageQuality >= DIRTY_BANDAGE_CLEANLINESS;
     chips.push(
@@ -808,11 +808,11 @@ function partChips(part: BodyPartState): HTMLSpanElement[] {
       chip(
         `antiseptic ${Math.round(part.disinfectedTicks / SIM_HZ)}s`,
         'good',
-        'Protected against new infection for this long',
+        t('cb.antisepticHint'),
       ),
     );
   }
-  if (chips.length === 0) chips.push(chip('healthy', 'neutral'));
+  if (chips.length === 0) chips.push(chip(t('cb.healthy'), 'neutral'));
   return chips;
 }
 
@@ -888,19 +888,19 @@ export function createBodyPanel(): Panel {
     });
     const partList = el('div', {
       className: 'cb-parts',
-      attrs: { role: 'group', 'aria-label': 'Body parts', 'data-testid': 'body-parts' },
+      attrs: { role: 'group', 'aria-label': t('cb.bodyParts'), 'data-testid': 'body-parts' },
     });
-    const treatTitle = el('div', { className: 'section-title', text: 'Treatment' });
+    const treatTitle = el('div', { className: 'section-title', text: t('cb.treatment') });
     const treatList = el('div', {
       className: 'cb-treat',
-      attrs: { role: 'group', 'aria-label': 'Treatments', 'data-testid': 'body-treatments' },
+      attrs: { role: 'group', 'aria-label': t('cb.treatments'), 'data-testid': 'body-treatments' },
     });
 
     const body = el('div', {
       className: 'panel-body cb-body',
       children: [
         vitals,
-        el('div', { className: 'section-title', text: 'Injuries' }),
+        el('div', { className: 'section-title', text: t('cb.injuries') }),
         partList,
         treatTitle,
         treatList,
@@ -921,20 +921,20 @@ export function createBodyPanel(): Panel {
       className: 'cb-readout',
       attrs: { 'data-testid': 'body-temperature' },
       children: [
-        el('span', { text: 'CORE' }),
+        el('span', { text: t('cb.coreLabel') }),
         el('b', { text: `${temperature.toFixed(1)} °C` }),
         cold
           ? chip('too cold', 'bad', `Below ${TEMP_MIN} °C: get warm, dry and fed`)
           : hot
             ? chip('overheating', 'bad', `Above ${TEMP_MAX} °C: shade, water, less clothing`)
-            : chip('normal', 'good', `${TEMP_MIN}–${TEMP_MAX} °C`),
+            : chip(t('cb.tempNormal'), 'good', `${TEMP_MIN}–${TEMP_MAX} °C`),
       ],
     });
 
     view.vitals.replaceChildren(
       statBar('HP', player.health, player.maxHealth, UI.health),
-      statBar('BLOOD', player.blood, 100, UI.bleed, { compact: true }),
-      statBar('PAIN', pain, 100, pain >= 40 ? UI.danger : UI.warn, { compact: true }),
+      statBar(t('cb.bloodLabel'), player.blood, 100, UI.bleed, { compact: true }),
+      statBar(t('cb.painLabel'), pain, 100, pain >= 40 ? UI.danger : UI.warn, { compact: true }),
       readout,
     );
   }
@@ -943,7 +943,7 @@ export function createBodyPanel(): Panel {
     const worst = ordered[0];
     const rows = ordered.map((id) => {
       const part = player.body.parts[id];
-      const label = BODY_PART_LABELS[id];
+      const label = t(`bodyPart.${id}`);
       const urgent = id === worst && severityOf(part) >= 20;
       const node = el('button', {
         className: `cb-part${urgent ? ' cb-part--urgent' : ''}`,
@@ -979,14 +979,14 @@ export function createBodyPanel(): Panel {
     treatments: readonly Treatment[],
     busy: boolean,
   ): void {
-    const label = BODY_PART_LABELS[part];
-    view.treatTitle.textContent = `Treatment — ${label}`;
+    const label = t(`bodyPart.${part}`);
+    view.treatTitle.textContent = t('cb.treatmentFor', { part: label });
 
     if (treatments.length === 0) {
       view.treatList.replaceChildren(
         el('p', {
           className: 'muted',
-          text: 'No medical supplies in your pack.',
+          text: t('cb.noSupplies'),
           attrs: { 'data-testid': 'body-treat-empty' },
         }),
       );
@@ -1000,7 +1000,7 @@ export function createBodyPanel(): Panel {
       const disabled = !applies.ok || busy;
 
       const title = busy
-        ? 'Still busy with the last treatment.'
+        ? t('cb.stillBusy')
         : applies.ok
           ? systemic
             ? `${def.name} — acts on the whole body, not just ${label}.`
@@ -1014,7 +1014,7 @@ export function createBodyPanel(): Panel {
           type: 'button',
           'data-testid': `body-treat-slot-${index}`,
           'data-def-id': def.id,
-          'aria-label': `${applies.ok ? 'Apply' : 'Cannot apply'} ${def.name} to ${label}`,
+          'aria-label': `${applies.ok ? t('cb.apply') : t('cb.cannotApply')} ${def.name} to ${label}`,
         },
         children: [
           url
@@ -1055,7 +1055,7 @@ export function createBodyPanel(): Panel {
   /** Every medical item in the pack, in slot order, resolved against `part`. */
   function collectTreatments(ctx: UiContext, player: PlayerState, part: BodyPartId): Treatment[] {
     const target = player.body.parts[part];
-    const label = BODY_PART_LABELS[part];
+    const label = t(`bodyPart.${part}`);
     const out: Treatment[] = [];
     player.inventory.slots.forEach((slot, index) => {
       if (!slot) return;
@@ -1095,10 +1095,10 @@ export function createBodyPanel(): Panel {
       partsSignature = '';
       treatSignature = '';
       selected = null;
-      const root = panelFrame('Body', () => ctx.close('body'), view.body, 'panel--body');
+      const root = panelFrame(t('panel.body'), () => ctx.close('body'), view.body, 'panel--body');
       root.setAttribute('data-testid', 'body-panel');
       const close = root.querySelector<HTMLButtonElement>('.panel-head button');
-      close?.setAttribute('aria-label', 'Close body panel');
+      close?.setAttribute('aria-label', t('cb.closeBody'));
       close?.setAttribute('data-testid', 'body-close');
       return root;
     },
@@ -1112,9 +1112,7 @@ export function createBodyPanel(): Panel {
         vitalsSignature = 'none';
         partsSignature = '';
         treatSignature = '';
-        view.vitals.replaceChildren(
-          el('p', { className: 'muted', text: 'Waiting for the world…' }),
-        );
+        view.vitals.replaceChildren(el('p', { className: 'muted', text: t('cb.waitingForWorld') }));
         view.partList.replaceChildren();
         view.treatList.replaceChildren();
         return;

@@ -49,6 +49,19 @@ export function meleeArcShape(
   };
 }
 
+/** How long a speech bubble stays up, in milliseconds. */
+const BUBBLE_LIFE_MS = 2200;
+
+/**
+ * How far above the player's centre the bubble sits, in world pixels.
+ *
+ * High enough to clear the focus name label, which hangs just over whatever the interact
+ * key is aimed at - often the thing right at the player's feet. The label is a DOM element
+ * and so always draws over the canvas, so the two overlapping is not a z-order problem that
+ * can be fixed; they simply have to not share the space.
+ */
+const BUBBLE_LIFT = 48;
+
 export interface FloatingText {
   text: Phaser.GameObjects.Text;
   life: number;
@@ -59,11 +72,18 @@ export class EffectsRenderer {
   private readonly toasts: string[] = [];
   private hitFlash: Phaser.GameObjects.Rectangle | null = null;
   private hitFlashLife = 0;
+  private bubble: {
+    label: Phaser.GameObjects.Text;
+    tail: Phaser.GameObjects.Triangle;
+  } | null = null;
+  private bubbleLife = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly selfId: () => string | null,
     private readonly data: GameData,
+    /** Where to hang the speech bubble. Null before the first snapshot. */
+    private readonly selfPosition: () => { x: number; y: number } | null,
   ) {}
 
   /** Handle one tick's worth of events. */
@@ -131,10 +151,14 @@ export class EffectsRenderer {
       case 'buildRejected':
       case 'craftFailed':
       case 'commandRejected':
-        // These arrive as the simulation's own reason strings, which are a mix of codes and
-        // English phrases. They used to be shown raw, so a failed gather flashed
-        // `toolIneffective` at the player.
-        this.toast(rejectText(event.reason));
+        // Over the player's own head rather than in the toast feed. A refusal answers
+        // something the player just tried to do, and the feed is where things that happened
+        // *to* them arrive - a levelling up, an item picked up. Put together, a "too far
+        // away" scrolled past among them and read as news rather than as an answer.
+        //
+        // These arrive as the simulation's own reason strings, a mix of codes and English
+        // phrases, and used to be shown raw: a failed gather flashed `toolIneffective`.
+        this.say(rejectText(event.reason));
         break;
       case 'cropHarvested':
         this.toast('harvested');
@@ -168,6 +192,51 @@ export class EffectsRenderer {
       .setOrigin(0.5, 1)
       .setDepth(EntityDepth.overlay);
     this.floaters.push({ text, life: 800 });
+  }
+
+  /**
+   * Put a line over the player's head.
+   *
+   * One bubble, reused. A second refusal replaces the first and restarts its clock rather
+   * than stacking: refusals arrive in bursts - a held key retrying, a wrong tool swung
+   * twice - and a column of bubbles growing off the top of the sprite reads as a bug. The
+   * newest one is also the only one that still matters.
+   */
+  private say(text: string): void {
+    const at = this.selfPosition();
+    if (!at) return;
+    if (!this.bubble) {
+      const label = this.scene.add
+        .text(0, 0, text, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '13px',
+          color: cssColor(UI.text),
+          backgroundColor: cssColor(UI.panel, 0.92),
+          padding: { x: 7, y: 4 },
+          align: 'center',
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(EntityDepth.overlay + 1);
+      // The tail, so it reads as coming from the player rather than floating near them.
+      const tail = this.scene.add
+        .triangle(0, 0, -4, 0, 4, 0, 0, 5, UI.panel, 0.92)
+        .setOrigin(0.5, 0)
+        .setDepth(EntityDepth.overlay);
+      this.bubble = { label, tail };
+    }
+    this.bubble.label.setText(text);
+    this.bubble.label.setAlpha(1);
+    this.bubble.tail.setAlpha(1);
+    this.bubbleLife = BUBBLE_LIFE_MS;
+    this.positionBubble(at);
+  }
+
+  /** Keep the bubble over the player as they move. */
+  private positionBubble(at: { x: number; y: number }): void {
+    if (!this.bubble) return;
+    const top = at.y - BUBBLE_LIFT;
+    this.bubble.label.setPosition(at.x, top);
+    this.bubble.tail.setPosition(at.x, top);
   }
 
   private burst(x: number, y: number, textureKey: string, scale: number, durationMs: number): void {
@@ -284,6 +353,22 @@ export class EffectsRenderer {
   }
 
   update(deltaMs: number): void {
+    if (this.bubble && this.bubbleLife > 0) {
+      this.bubbleLife -= deltaMs;
+      // Follows the player: a refusal for walking too far is often followed by walking, and
+      // a bubble left behind would be pointing at where they used to be.
+      const at = this.selfPosition();
+      if (at) this.positionBubble(at);
+      // Fades only at the end, so the whole line is readable for most of its life.
+      const fade = Math.max(0, Math.min(1, this.bubbleLife / 400));
+      this.bubble.label.setAlpha(fade);
+      this.bubble.tail.setAlpha(fade);
+      if (this.bubbleLife <= 0) {
+        this.bubble.label.setAlpha(0);
+        this.bubble.tail.setAlpha(0);
+      }
+    }
+
     for (let i = this.floaters.length - 1; i >= 0; i--) {
       const floater = this.floaters[i];
       if (!floater) continue;

@@ -17,6 +17,14 @@ import {
  * server's authority agree" — so these tests check both, and check that the error between
  * them stays small.
  */
+/** The key that undoes another, so a leg of a test can retrace its own steps. */
+const OPPOSITE: Record<string, string> = {
+  KeyD: 'KeyA',
+  KeyA: 'KeyD',
+  KeyW: 'KeyS',
+  KeyS: 'KeyW',
+};
+
 test.describe('movement', () => {
   test('WASD moves the player, and the server agrees', async ({ page }) => {
     await openClient(page);
@@ -67,10 +75,9 @@ test.describe('movement', () => {
     await openClient(page);
     await joinServer(page);
 
-    // Both preconditions are established rather than inherited. Every gameplay spec shares
-    // one server and one character, so by the time this runs the player may be out of
-    // breath from felling a tree two files ago - and sprinting below the stamina floor
-    // silently degrades to walking, which reads here as "sprinting is not faster".
+    // Both preconditions are established rather than assumed: which way is open depends on
+    // what the world generated around the spawn point, and sprinting below the stamina
+    // floor silently degrades to walking, which reads here as "sprinting is not faster".
     const heading = await openDirection(page);
     await waitForStamina(page, 60);
 
@@ -80,10 +87,14 @@ test.describe('movement', () => {
     const walked = Math.hypot(walkEnd.x - walkStart.x, walkEnd.y - walkStart.y);
     expect(walked, `nothing to compare: ${heading} is blocked`).toBeGreaterThan(10);
 
+    // Sprinting *back* the way we just walked. Going further in the same direction can run
+    // into whatever stopped the walk, and a sprint with no room to move measures nothing -
+    // which is exactly how this failed: 73 px walked, 0 px sprinted, against a wall.
+    const back = OPPOSITE[heading] ?? heading;
     await waitForStamina(page, 60);
     await page.keyboard.down('ShiftLeft');
     const sprintStart = await self(page);
-    await holdKey(page, heading, 600);
+    await holdKey(page, back, 600);
     const sprintEnd = await self(page);
     await page.keyboard.up('ShiftLeft');
     const sprinted = Math.hypot(sprintEnd.x - sprintStart.x, sprintEnd.y - sprintStart.y);
@@ -130,10 +141,9 @@ test.describe('render smoothness', () => {
       };
       const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-      // Whichever way is open depends entirely on where the earlier tests left the player -
-      // every gameplay spec shares one server and one save - so probe for a direction with
-      // room before measuring. Without this the test silently graded a sprite pinned
-      // against a wall.
+      // Whichever way is open depends on what the world generated around the spawn point,
+      // so probe for a direction with room before measuring. Without this the test silently
+      // graded a sprite pinned against a wall.
       let heading = 'KeyD';
       let best = 0;
       for (const code of ['KeyD', 'KeyA', 'KeyS', 'KeyW']) {
@@ -188,7 +198,8 @@ test.describe('render smoothness', () => {
     });
 
     expect(stats.count).toBeGreaterThan(60);
-    // The premise: it has to have gone somewhere, or the rest measures a stationary sprite.
+    // The premise: it has to have gone somewhere, or the rest grades a stationary sprite as
+    // perfectly smooth.
     expect(
       stats.travelled,
       `the player did not move heading ${stats.heading}; is every way blocked?`,

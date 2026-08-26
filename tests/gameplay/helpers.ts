@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * Shared plumbing for the gameplay suite.
@@ -49,7 +49,29 @@ export function pageErrors(page: Page): string[] {
 }
 
 /** Join the test server and wait until the client holds authoritative state. */
-export async function joinServer(page: Page, name = 'Tester'): Promise<void> {
+/**
+ * A player name unique to the running test.
+ *
+ * Every gameplay spec talks to one server, and the character is keyed by name - so a shared
+ * name meant thirty-eight tests taking turns moving one body around. By the end of a run it
+ * was wedged in a corner, and tests that needed room to walk failed on where their
+ * predecessors had left it. Half a dozen fixes in this file were really just working around
+ * that. A name per test gives each one a character of its own, at the spawn point, with full
+ * stamina and its own inventory.
+ *
+ * The world is still shared, which is what the tests want: the terrain and the resource
+ * nodes are the same for everyone.
+ */
+function testCharacterName(): string {
+  const path = test.info().titlePath.join(' ');
+  // The id derived from this has to stay inside 48 characters and must not collide, so it is
+  // a hash of the full title rather than a truncation of it.
+  let hash = 0;
+  for (let i = 0; i < path.length; i++) hash = (hash * 31 + path.charCodeAt(i)) >>> 0;
+  return `T${hash.toString(36)}`;
+}
+
+export async function joinServer(page: Page, name = testCharacterName()): Promise<void> {
   await page.fill('#mp-url', SERVER_URL);
   await page.fill('#mp-name', name);
   await page.click('#mp-join');
@@ -115,9 +137,9 @@ export async function holdKey(page: Page, key: string, ms: number): Promise<void
 /**
  * Wait until the player has at least this much stamina.
  *
- * Needed because every gameplay spec shares one server and one character: a test that
- * chopped a tree leaves the next one short of breath, and sprinting silently degrades to
- * walking below `SPRINT_STAMINA_FLOOR`. Standing still is what regenerates it.
+ * Sprinting silently degrades to walking below `SPRINT_STAMINA_FLOOR`, so a test that
+ * swung at something first would measure a walk and call it a sprint. Standing still is
+ * what regenerates it.
  */
 export async function waitForStamina(page: Page, atLeast: number): Promise<void> {
   await page.waitForFunction(
@@ -130,9 +152,9 @@ export async function waitForStamina(page: Page, atLeast: number): Promise<void>
 /**
  * Hold each direction briefly and return whichever moved the player furthest.
  *
- * The specs share one save, so where the player is standing - and which way is walled off -
- * depends on what ran before. A test that assumes east is open grades a sprint against a
- * wall as "no faster than walking".
+ * Each test gets its own character at the spawn point, but what surrounds that point is
+ * whatever the world generated - a tree, a boulder, the corner of a ruin. A test that
+ * assumes east is open grades a sprint against a wall as "no faster than walking".
  */
 export async function openDirection(page: Page): Promise<string> {
   let best = 'KeyD';

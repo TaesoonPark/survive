@@ -27,4 +27,4 @@ export interface StringTable {
 export type TextKind = keyof StringTable;
 
 /** Languages the game ships text for. */
-export type Locale = 'en';
+export type Locale = 'en' | 'ko';

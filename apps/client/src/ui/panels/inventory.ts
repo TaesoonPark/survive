@@ -49,15 +49,15 @@ const GRID_COLUMNS = 8;
  * Not `humanize()`: these ids are camelCase, so `mainHand` would come out as "MainHand".
  */
 const SLOT_LABEL: Record<EquipSlot, string> = {
-  head: 'Head',
-  face: 'Face',
-  chest: 'Chest',
-  legs: 'Legs',
-  feet: 'Feet',
-  hands: 'Hands',
-  back: 'Back',
-  mainHand: 'Main Hand',
-  offHand: 'Off Hand',
+  head: t('inv.slot.head'),
+  face: t('inv.slot.face'),
+  chest: t('inv.slot.chest'),
+  legs: t('inv.slot.legs'),
+  feet: t('inv.slot.feet'),
+  hands: t('inv.slot.hands'),
+  back: t('inv.slot.back'),
+  mainHand: t('inv.slot.mainHand'),
+  offHand: t('inv.slot.offHand'),
 };
 
 /** Every action the right-click menu can offer. Also the suffix of its `data-testid`. */
@@ -319,7 +319,7 @@ export function createInventoryPanel(): Panel {
     } else {
       actions.push({
         id: 'unequip',
-        label: 'Unequip',
+        label: t('inv.unequip'),
         run: () => ctx.send({ type: 'unequipItem', slot: target.slot }),
       });
     }
@@ -336,7 +336,7 @@ export function createInventoryPanel(): Panel {
     if (target.stack.count > 1) {
       actions.push({
         id: 'drop',
-        label: 'Drop',
+        label: t('inv.drop'),
         run: () => ctx.send({ type: 'dropItem', ref, index, count: 1 }),
       });
       actions.push({
@@ -348,7 +348,7 @@ export function createInventoryPanel(): Panel {
     } else {
       actions.push({
         id: 'drop',
-        label: 'Drop',
+        label: t('inv.drop'),
         destructive: true,
         run: () => ctx.send({ type: 'dropItem', ref, index, count: null }),
       });
@@ -660,7 +660,7 @@ export function createInventoryPanel(): Panel {
     const total = player.inventory.slots.length;
 
     host.replaceChildren(
-      statBar('LOAD', player.carryWeight, capacity, color),
+      statBar(t('inv.load'), player.carryWeight, capacity, color),
       el('div', {
         className: 'row',
         children: [
@@ -672,7 +672,7 @@ export function createInventoryPanel(): Panel {
           el('span', {
             className: 'inv-load muted',
             attrs: { 'data-testid': 'inventory-slot-count' },
-            text: `${used} / ${total} slots`,
+            text: t('inv.slotsUsed', { used, total }),
           }),
           over
             ? el('span', {
@@ -685,7 +685,7 @@ export function createInventoryPanel(): Panel {
       }),
       el('p', {
         className: 'muted inv-hint',
-        text: 'Drag to move · shift-drag for half · drag out to drop · right click for more',
+        text: t('inv.dragHint'),
       }),
     );
   }
@@ -695,12 +695,16 @@ export function createInventoryPanel(): Panel {
 
     const doll = el('div', {
       className: 'inv-doll',
-      attrs: { role: 'group', 'aria-label': 'Equipment', 'data-testid': 'inventory-equipment' },
+      attrs: {
+        role: 'group',
+        'aria-label': t('inv.equipment'),
+        'data-testid': 'inventory-equipment',
+      },
     });
 
     const grid = el('div', {
       className: 'grid',
-      attrs: { role: 'group', 'aria-label': 'Inventory slots', 'data-testid': 'inventory-grid' },
+      attrs: { role: 'group', 'aria-label': t('inv.slotsLabel'), 'data-testid': 'inventory-grid' },
     });
     grid.style.gridTemplateColumns = `repeat(${GRID_COLUMNS}, 46px)`;
 
@@ -709,7 +713,7 @@ export function createInventoryPanel(): Panel {
       attrs: { 'data-testid': 'inventory-footer' },
     });
 
-    const sort = button('Sort', () => {
+    const sort = button(t('inv.sort'), () => {
       closeMenu();
       // Read the context from `activeCtx` rather than closing over the one that built
       // this button: the button outlives any single frame.
@@ -724,14 +728,14 @@ export function createInventoryPanel(): Panel {
       children: [
         el('div', {
           className: 'inv-left',
-          children: [el('div', { className: 'section-title', text: 'Worn' }), doll],
+          children: [el('div', { className: 'section-title', text: t('inv.worn') }), doll],
         }),
         el('div', {
           className: 'inv-right',
           children: [
             el('div', {
               className: 'inv-head',
-              children: [el('div', { className: 'section-title', text: 'Bag' }), sort],
+              children: [el('div', { className: 'section-title', text: t('inv.bag') }), sort],
             }),
             el('div', { className: 'inv-grid-wrap', children: [grid] }),
             footer,
@@ -757,7 +761,12 @@ export function createInventoryPanel(): Panel {
       // Forget the cached signatures so the first update draws from scratch.
       contentSignature = '';
       footerSignature = '';
-      const root = panelFrame('Inventory', () => ctx.close('inventory'), view.body, 'panel--inv');
+      const root = panelFrame(
+        t('panel.inventory'),
+        () => ctx.close('inventory'),
+        view.body,
+        'panel--inv',
+      );
       root.setAttribute('data-testid', 'inventory-panel');
       // A drop that lands on the panel's own chrome is a drop onto nothing, and the
       // source's `dragend` turns that into `dropItem`. Nothing to bind here; the panel
@@ -778,7 +787,7 @@ export function createInventoryPanel(): Panel {
           view.doll.replaceChildren();
           view.grid.replaceChildren();
           view.footer.replaceChildren(
-            el('p', { className: 'muted', text: 'Waiting for the world…' }),
+            el('p', { className: 'muted', text: t('inv.waitingForWorld') }),
           );
         }
         return;

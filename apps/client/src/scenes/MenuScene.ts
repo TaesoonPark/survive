@@ -17,6 +17,8 @@ import type { LocalConnection } from './connectionTypes';
  * Either way the client ends up doing the same thing: connecting to an authoritative
  * server over the same protocol.
  */
+import { t } from '../ui/strings';
+
 export class MenuScene extends Phaser.Scene {
   static readonly KEY = 'Menu';
 
@@ -45,44 +47,43 @@ export class MenuScene extends Phaser.Scene {
     const desktop = typeof window.survive !== 'undefined';
     return `
       <div class="menu-panel">
-        <h1>Survive</h1>
-        <p class="menu-sub">Scavenge. Build. Last the night.</p>
+        <h1>${t('menu.title')}</h1>
+        <p class="menu-sub">${t('menu.tagline')}</p>
 
         <section class="menu-block">
-          <h2>Single player</h2>
+          <h2>${t('menu.singlePlayer')}</h2>
           ${
             desktop
               ? `<div class="menu-row">
                    <input id="sp-world" type="text" value="world01" maxlength="24"
-                          aria-label="World name" />
-                   <button id="sp-start" class="primary">PLAY</button>
+                          aria-label="${t('menu.worldName')}" />
+                   <button id="sp-start" class="primary">${t('menu.play')}</button>
                  </div>
                  <ul id="sp-worlds" class="menu-list"></ul>`
               : `<p class="menu-note">
-                   Single player launches a local server, which needs the desktop build.
-                   In the browser, start a server yourself and join it below:
+                   ${t('menu.desktopOnly')}
                    <code>npm run start:server</code>
                  </p>`
           }
         </section>
 
         <section class="menu-block">
-          <h2>Join a server</h2>
+          <h2>${t('menu.joinServer')}</h2>
           <div class="menu-row">
             <input id="mp-url" type="text" value="http://127.0.0.1:27500"
-                   aria-label="Server address" />
-            <button id="mp-join">JOIN</button>
+                   aria-label="${t('menu.serverAddress')}" />
+            <button id="mp-join">${t('menu.join')}</button>
           </div>
           <div class="menu-row">
             <input id="mp-name" type="text" value="Survivor" maxlength="24"
-                   aria-label="Player name" />
-            <input id="mp-password" type="password" placeholder="password (optional)"
-                   aria-label="Server password" />
+                   aria-label="${t('menu.playerName')}" />
+            <input id="mp-password" type="password" placeholder="${t('menu.passwordPlaceholder')}"
+                   aria-label="${t('menu.serverPassword')}" />
           </div>
         </section>
 
         <p id="menu-status" class="menu-status" role="status"></p>
-        <footer class="menu-foot">protocol v${PROTOCOL_VERSION} · content ${dataVersion}</footer>
+        <footer class="menu-foot">${t('menu.versions', { protocol: PROTOCOL_VERSION, content: dataVersion })}</footer>
       </div>
     `;
   }
@@ -170,7 +171,7 @@ export class MenuScene extends Phaser.Scene {
         this.root.querySelector<HTMLInputElement>('#mp-name')?.value.trim() || 'Survivor';
       const password = this.root.querySelector<HTMLInputElement>('#mp-password')?.value ?? '';
       if (!url) {
-        this.status('Enter a server address.', 'error');
+        this.status(t('menu.needAddress'), 'error');
         return;
       }
       this.launch({ url, room: 'survive', token: '', world: '', port: 0 }, name, password);

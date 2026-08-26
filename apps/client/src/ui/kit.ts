@@ -185,7 +185,7 @@ export function itemTooltip(stack: ItemStack, data: GameData): string {
   }
   if (def.weapon) {
     const weapon = def.weapon;
-    lines.push(t('tip.damage', { amount: weapon.damage, type: weapon.damageType }));
+    lines.push(t('tip.damage', { amount: weapon.damage, type: t(`damage.${weapon.damageType}`) }));
     lines.push(
       t('tip.reach', {
         range: Math.round(weapon.range),
@@ -196,7 +196,13 @@ export function itemTooltip(stack: ItemStack, data: GameData): string {
     if (weapon.twoHanded) lines.push(t('tip.twoHanded'));
   }
   if (def.tool) {
-    lines.push(t('tip.tool', { kinds: def.tool.kinds.join(', '), tier: def.tool.tier }));
+    lines.push(
+      t('tip.tool', {
+        // Each kind through the table, not the raw id: `wateringCan` is not a word.
+        kinds: def.tool.kinds.map((kind) => t(`tool.${kind}`)).join(', '),
+        tier: def.tool.tier,
+      }),
+    );
   }
   if (def.armor) {
     const parts = Object.keys(def.armor.coverage)
@@ -219,7 +225,7 @@ export function itemTooltip(stack: ItemStack, data: GameData): string {
     }
   }
   if (def.medical) {
-    lines.push(t('tip.medical', { kind: def.medical.kind }));
+    lines.push(t('tip.medical', { kind: t(`medical.${def.medical.kind}`) }));
   }
   lines.push(t('tip.weight', { kg: (def.weight * stack.count).toFixed(1) }));
   return lines.filter((line, index) => line !== '' || index > 0).join('\n');
@@ -507,7 +513,7 @@ export function worldTooltip(
       }
       lines.push('', condition(snapshot.health, snapshot.maxHealth));
       if (def.toolKinds.length > 0) {
-        const tools = def.toolKinds.join(' or ');
+        const tools = def.toolKinds.map((kind) => t(`tool.${kind}`)).join(' / ');
         const held = player
           ? holdsSuitableTool(player, def.toolKinds, def.minToolTier, data)
           : null;
@@ -527,7 +533,7 @@ export function worldTooltip(
         })
         .slice(0, 5);
       if (yields.length > 0) lines.push(t('tip.yields', { list: yields.join(', ') }));
-      if (def.skill) lines.push(t('tip.trains', { skill: def.skill }));
+      if (def.skill) lines.push(t('tip.trains', { skill: t(`skill.${def.skill}`) }));
       break;
     }
     case 'item': {
@@ -547,7 +553,7 @@ export function worldTooltip(
       const roles: string[] = [];
       if (def.container) roles.push(t('tip.roleStorage'));
       if (def.door) roles.push(t(snapshot.door?.open ? 'tip.roleDoorOpen' : 'tip.roleDoorClosed'));
-      if (def.station) roles.push(t('tip.roleStation', { kind: def.station.kind }));
+      if (def.station) roles.push(t('tip.roleStation', { kind: t(`station.${def.station.kind}`) }));
       if (def.bed) roles.push(t('tip.roleBed'));
       if (def.plot) roles.push(t('tip.rolePlot'));
       if (roles.length > 0) lines.push(roles.join(', '));

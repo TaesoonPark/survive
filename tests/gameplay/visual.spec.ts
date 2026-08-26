@@ -74,10 +74,10 @@ test.describe('visual', () => {
     await waitForTicks(page, 20);
 
     // Walked *at* a node the client can already see, rather than in hopeful directions.
-    // Every gameplay test shares one server and one save, and several of them move the
-    // player, so "wander east and hope" passes or fails on where the previous test left
-    // them. This is the cheapest end-to-end proof that terrain, entity replication, the
-    // interaction search and the HUD all agree - it just needs to be aimed.
+    // What is near the spawn point is whatever the world generated there, so "wander east
+    // and hope" passes or fails on the seed. This is the cheapest end-to-end proof that
+    // terrain, entity replication, the interaction search and the HUD all agree - it just
+    // needs to be aimed.
     const node = await nearest(page, 'node');
     expect(node, 'expected a resource node within streaming range').not.toBeNull();
 

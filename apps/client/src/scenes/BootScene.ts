@@ -10,6 +10,8 @@ import { hideBoot, setBootStatus, showBootError } from '../main';
  * (see `art/canvasArt.ts`). That takes tens of milliseconds, which is why it happens
  * behind the HTML loading overlay rather than mid-game.
  */
+import { initLocale } from '../locale';
+
 export class BootScene extends Phaser.Scene {
   static readonly KEY = 'Boot';
 
@@ -18,10 +20,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Before the content tables, because they are built in the chosen language.
+    const locale = initLocale();
     setBootStatus('loading content…');
     let data: GameData;
     try {
-      data = createGameData();
+      data = createGameData(undefined, { locale });
     } catch (error) {
       // A content validation failure is a developer error, and the message lists every
       // broken reference - surface it verbatim rather than hiding it.

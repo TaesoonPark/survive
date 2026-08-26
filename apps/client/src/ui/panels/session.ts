@@ -218,21 +218,21 @@ function keyLabel(code: string): string {
     case 'ArrowRight':
       return '→';
     case 'ShiftLeft':
-      return 'Left Shift';
+      return t('session.key.shiftLeft');
     case 'ShiftRight':
-      return 'Right Shift';
+      return t('session.key.shiftRight');
     case 'ControlLeft':
-      return 'Left Ctrl';
+      return t('session.key.ctrlLeft');
     case 'ControlRight':
-      return 'Right Ctrl';
+      return t('session.key.ctrlRight');
     case 'AltLeft':
-      return 'Left Alt';
+      return t('session.key.altLeft');
     case 'AltRight':
-      return 'Right Alt';
+      return t('session.key.altRight');
     case 'Escape':
-      return 'Esc';
+      return t('session.key.escape');
     case 'Space':
-      return 'Space';
+      return t('session.key.space');
     default:
       return code;
   }
@@ -374,7 +374,7 @@ export function createChatPanel(): Panel {
       attrs: {
         role: 'log',
         'aria-live': 'polite',
-        'aria-label': 'Chat messages',
+        'aria-label': t('session.chatLog'),
         'data-testid': 'chat-log',
       },
     });
@@ -383,10 +383,10 @@ export function createChatPanel(): Panel {
       className: 'chat-input',
       attrs: {
         type: 'text',
-        placeholder: 'Say something…',
+        placeholder: t('session.chatPlaceholder'),
         maxlength: String(CHAT_MAX_LENGTH),
         autocomplete: 'off',
-        'aria-label': 'Chat message',
+        'aria-label': t('session.chatInput'),
         'data-testid': 'chat-input',
       },
       on: {
@@ -411,7 +411,7 @@ export function createChatPanel(): Panel {
 
     const select = el('select', {
       className: 'chat-channel',
-      attrs: { 'aria-label': 'Chat channel', 'data-testid': 'chat-channel' },
+      attrs: { 'aria-label': t('session.chatChannel'), 'data-testid': 'chat-channel' },
       children: CHAT_CHANNELS.map((id) =>
         el('option', { text: labelFor(id), attrs: { value: id } }),
       ),
@@ -426,7 +426,7 @@ export function createChatPanel(): Panel {
     });
     select.value = channel;
 
-    const send = button('Send', () => submit(), 'primary');
+    const send = button(t('session.send'), () => submit(), 'primary');
     send.setAttribute('data-testid', 'chat-send');
 
     const body = el('div', {
@@ -476,7 +476,7 @@ export function createChatPanel(): Panel {
           el('span', { className: 'chat-line-text', text: entry.text }),
         ],
       });
-      if (entry.unconfirmed) node.title = 'Sent — not yet confirmed by the server';
+      if (entry.unconfirmed) node.title = t('session.chatPending');
       view.log.append(node);
       lineNodes.set(entry.id, { node, unconfirmed: entry.unconfirmed });
       renderedTo = entry.id;
@@ -504,7 +504,7 @@ export function createChatPanel(): Panel {
       // Opening chat is a request to type: focus on the first update, once the layer
       // has actually put the element in the document.
       wantsFocus = true;
-      const root = panelFrame('Chat', () => ctx.close('chat'), view.body, 'panel--chat');
+      const root = panelFrame(t('panel.chat'), () => ctx.close('chat'), view.body, 'panel--chat');
       root.setAttribute('data-testid', 'chat-panel');
       return root;
     },
@@ -542,37 +542,37 @@ export function createChatPanel(): Panel {
  * like a debug label. A death screen is the one place the game should use words.
  */
 const DEATH_CAUSE_TEXT: Record<string, string> = {
-  blunt: 'Beaten to death',
-  slash: 'Cut down',
-  pierce: 'Run through',
-  bullet: 'Shot dead',
-  explosive: 'Caught in a blast',
-  fire: 'Burned alive',
-  bleed: 'Bled out',
-  infection: 'Taken by infection',
-  starvation: 'Starved to death',
-  dehydration: 'Died of thirst',
-  exhaustion: 'Collapsed from exhaustion',
-  cold: 'Froze to death',
-  heat: 'Died of heatstroke',
-  fall: 'Died from the fall',
-  poison: 'Poisoned',
-  zombieBite: 'Torn apart by the dead',
-  suffocation: 'Suffocated',
+  blunt: t('session.death.beaten'),
+  slash: t('session.death.slash'),
+  pierce: t('session.death.pierce'),
+  bullet: t('session.death.shot'),
+  explosive: t('session.death.blast'),
+  fire: t('session.death.burned'),
+  bleed: t('session.death.bleeding'),
+  infection: t('session.death.infection'),
+  starvation: t('session.death.starved'),
+  dehydration: t('session.death.thirst'),
+  exhaustion: t('session.death.exhaustion'),
+  cold: t('session.death.cold'),
+  heat: t('session.death.heat'),
+  fall: t('session.death.fall'),
+  poison: t('session.death.poison'),
+  zombieBite: t('session.death.zombie'),
+  suffocation: t('session.death.suffocation'),
 };
 
 /** Lifetime counters, in the order the summary lists them. */
 const STAT_ROWS: readonly (readonly [keyof PlayerStats, string])[] = [
-  ['daysSurvived', 'Days survived'],
-  ['zombieKills', 'Zombies killed'],
-  ['animalKills', 'Animals killed'],
-  ['playerKills', 'Players killed'],
-  ['deaths', 'Deaths'],
-  ['distanceTravelled', 'Distance walked'],
-  ['itemsCrafted', 'Items crafted'],
-  ['structuresBuilt', 'Structures built'],
-  ['cropsHarvested', 'Crops harvested'],
-  ['resourcesGathered', 'Resources gathered'],
+  ['daysSurvived', t('session.stat.daysSurvived')],
+  ['zombieKills', t('session.stat.zombiesKilled')],
+  ['animalKills', t('session.stat.animalsKilled')],
+  ['playerKills', t('session.stat.playersKilled')],
+  ['deaths', t('session.stat.deaths')],
+  ['distanceTravelled', t('session.stat.distanceWalked')],
+  ['itemsCrafted', t('session.stat.itemsCrafted')],
+  ['structuresBuilt', t('session.stat.structuresBuilt')],
+  ['cropsHarvested', t('session.stat.cropsHarvested')],
+  ['resourcesGathered', t('session.stat.resourcesGathered')],
 ];
 
 function statValueText(key: keyof PlayerStats, stats: PlayerStats): string {
@@ -620,14 +620,14 @@ export function createDeathPanel(): Panel {
     const stats = el('dl', { className: 'death-stats', attrs: { 'data-testid': 'death-stats' } });
 
     const respawn = button(
-      'Respawn',
+      t('session.respawn'),
       () => ui?.send({ type: 'respawn', atBed: false }),
       'primary',
       true,
     );
     respawn.setAttribute('data-testid', 'respawn-button');
     const respawnAtBed = button(
-      'Respawn at bed',
+      t('session.respawnAtBed'),
       () => ui?.send({ type: 'respawn', atBed: true }),
       'default',
       true,
@@ -640,7 +640,7 @@ export function createDeathPanel(): Panel {
         cause,
         when,
         countdown,
-        el('div', { className: 'section-title', text: 'This life' }),
+        el('div', { className: 'section-title', text: t('session.thisLife') }),
         stats,
         el('div', {
           className: 'death-actions',
@@ -659,7 +659,10 @@ export function createDeathPanel(): Panel {
     lastHeaderSignature = signature;
 
     const cause = player.deathCause;
-    setText(view.cause, cause ? (DEATH_CAUSE_TEXT[cause] ?? labelFor(cause)) : 'Cause unknown');
+    setText(
+      view.cause,
+      cause ? (DEATH_CAUSE_TEXT[cause] ?? labelFor(cause)) : t('session.death.unknown'),
+    );
 
     if (player.deathTick < 0) {
       // Dead without a recorded tick should not happen, but an empty line is better
@@ -701,7 +704,12 @@ export function createDeathPanel(): Panel {
       lastReady = null;
       lastBedShown = null;
       const view = ensureParts();
-      const root = panelFrame('You died', () => ctx.close('death'), view.body, 'panel--death');
+      const root = panelFrame(
+        t('panel.death'),
+        () => ctx.close('death'),
+        view.body,
+        'panel--death',
+      );
       // Drop the frame's close button instead of styling it away: a control that is
       // present but inert is worse for a screen reader and for a Playwright test than
       // one that was never there. The frame is still built by `panelFrame` so the
@@ -728,7 +736,7 @@ export function createDeathPanel(): Panel {
       const ticksLeft = Math.max(0, player.respawnAtTick - tick);
       const ready = tick >= 0 && ticksLeft === 0;
       const countdownText = ready
-        ? 'Ready to respawn'
+        ? t('session.readyToRespawn')
         : `Respawn in ${(ticksLeft / SIM_HZ).toFixed(1)}s`;
       if (countdownText !== lastCountdown) {
         lastCountdown = countdownText;
@@ -763,34 +771,34 @@ export function createDeathPanel(): Panel {
 
 /** The control reference, read from the live bindings so it cannot go stale. */
 const CONTROL_ROWS: readonly (readonly [keyof ControlBindings, string])[] = [
-  ['up', 'Move up'],
-  ['down', 'Move down'],
-  ['left', 'Move left'],
-  ['right', 'Move right'],
-  ['sprint', 'Sprint'],
-  ['crouch', 'Crouch'],
-  ['interact', 'Interact'],
-  ['block', 'Block'],
-  ['reload', 'Reload'],
-  ['drop', 'Drop held item'],
-  ['inventory', 'Inventory'],
-  ['crafting', 'Crafting'],
-  ['build', 'Build menu'],
-  ['rotate', 'Rotate placement'],
-  ['health', 'Health'],
+  ['up', t('session.ctl.up')],
+  ['down', t('session.ctl.down')],
+  ['left', t('session.ctl.left')],
+  ['right', t('session.ctl.right')],
+  ['sprint', t('session.ctl.sprint')],
+  ['crouch', t('session.ctl.crouch')],
+  ['interact', t('session.ctl.interactKey')],
+  ['block', t('session.ctl.block')],
+  ['reload', t('session.ctl.reload')],
+  ['drop', t('session.ctl.drop')],
+  ['inventory', t('panel.inventory')],
+  ['crafting', t('panel.crafting')],
+  ['build', t('session.ctl.build')],
+  ['rotate', t('session.ctl.rotate')],
+  ['health', t('panel.body')],
   ['map', 'Map'],
-  ['chat', 'Chat'],
-  ['sleep', 'Sleep'],
-  ['debug', 'Debug overlay'],
-  ['pause', 'Pause / close panel'],
+  ['chat', t('panel.chat')],
+  ['sleep', t('session.ctl.sleep')],
+  ['debug', t('session.ctl.debug')],
+  ['pause', t('session.ctl.pause')],
 ];
 
 /** Controls that are not key bindings, so the reference is not quietly incomplete. */
 const POINTER_ROWS: readonly (readonly [string, string])[] = [
-  ['Attack', 'Left mouse'],
-  ['Use / interact', 'Right mouse'],
-  ['Select hotbar slot', '1 – 9'],
-  ['Cycle hotbar', 'Mouse wheel'],
+  [t('session.ctl.attack'), t('session.key.mouseLeft')],
+  [t('session.ctl.interact'), t('session.key.mouseRight')],
+  [t('session.ctl.selectHotbar'), '1 – 9'],
+  [t('session.ctl.cycleHotbar'), t('session.key.wheel')],
 ];
 
 /**
@@ -836,11 +844,11 @@ export function createPausePanel(): Panel {
       children: controlNodes,
     });
 
-    const resume = button('Resume', () => ui?.close('pause'), 'primary');
+    const resume = button(t('session.resume'), () => ui?.close('pause'), 'primary');
     resume.setAttribute('data-testid', 'pause-resume');
 
     const disconnect = button(
-      'Disconnect',
+      t('session.disconnect'),
       () => {
         const context = ui;
         if (!context) return;
@@ -869,7 +877,7 @@ export function createPausePanel(): Panel {
       children: [
         status,
         el('div', { className: 'pause-actions', children: [resume, disconnect] }),
-        el('div', { className: 'section-title', text: 'Controls' }),
+        el('div', { className: 'section-title', text: t('session.controls') }),
         controls,
       ],
     });
@@ -891,7 +899,12 @@ export function createPausePanel(): Panel {
       // Ask on open. `UiScene.closePanel` sends `paused: false` on the way out, which
       // is why Resume is simply "close the panel".
       ctx.send({ type: 'setPaused', paused: true });
-      const root = panelFrame('Paused', () => ctx.close('pause'), view.body, 'panel--pause');
+      const root = panelFrame(
+        t('panel.paused'),
+        () => ctx.close('pause'),
+        view.body,
+        'panel--pause',
+      );
       root.setAttribute('data-testid', 'pause-panel');
       return root;
     },
@@ -904,9 +917,9 @@ export function createPausePanel(): Panel {
       const canPause = ctx.session.welcome?.config.canPause ?? false;
       const tone = paused ? 'paused' : canPause ? '' : 'live';
       const text = paused
-        ? 'The simulation is paused.'
+        ? t('session.paused')
         : canPause
-          ? 'Waiting for the server to pause…'
+          ? t('session.waitingForPause')
           : 'This server does not pause: the world keeps running while this menu is open.';
 
       const signature = `${text}|${tone}`;
@@ -1056,7 +1069,12 @@ export function createDebugPanel(): Panel {
       injectSessionStyles();
       lastFrameMs = 0;
       fps = 0;
-      const root = panelFrame('Debug', () => ctx.close('debug'), ensureBody(), 'panel--debug');
+      const root = panelFrame(
+        t('panel.debug'),
+        () => ctx.close('debug'),
+        ensureBody(),
+        'panel--debug',
+      );
       root.setAttribute('data-testid', 'debug-panel');
       return root;
     },

@@ -55,19 +55,19 @@ import type { Panel, UiContext } from '../panel';
  * that silently reads "Other".
  */
 const CATEGORY_LABEL: Readonly<Record<StructureCategory, string>> = {
-  foundation: 'Foundations',
-  wall: 'Walls',
-  door: 'Doors',
-  window: 'Windows',
-  floor: 'Floors',
-  furniture: 'Furniture',
-  station: 'Stations',
-  storage: 'Storage',
-  farm: 'Farming',
-  light: 'Lighting',
-  defense: 'Defences',
-  bed: 'Beds',
-  misc: 'Other',
+  foundation: t('build.cat.foundations'),
+  wall: t('build.cat.walls'),
+  door: t('build.cat.doors'),
+  window: t('build.cat.windows'),
+  floor: t('build.cat.floors'),
+  furniture: t('build.cat.furniture'),
+  station: t('build.cat.stations'),
+  storage: t('build.cat.storage'),
+  farm: t('build.cat.farming'),
+  light: t('build.cat.lighting'),
+  defense: t('build.cat.defences'),
+  bed: t('build.cat.beds'),
+  misc: t('build.cat.other'),
 };
 
 /** Degrees each rotation index turns the footprint. Rotation is 0..3 server-side. */
@@ -173,11 +173,6 @@ function injectBuildStyles(): void {
     .build-chip--warn { border-color: ${cssColor(UI.warn, 0.7)}; color: ${cssColor(UI.warn)}; }
   `;
   document.head.append(style);
-}
-
-/** Turn `wateringCan` or `wood_log` into `Watering Can` / `Wood Log`. */
-function labelFor(id: string): string {
-  return humanize(id.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase());
 }
 
 /** Build times live in ticks; players think in seconds. */
@@ -333,7 +328,7 @@ function computeStatus(
     const have = counts.get(entry.defId) ?? 0;
     return {
       defId: entry.defId,
-      label: ctx.data.items.get(entry.defId)?.name ?? labelFor(entry.defId),
+      label: ctx.data.items.get(entry.defId)?.name ?? humanize(entry.defId),
       need: entry.count,
       have,
       ok: have >= entry.count,
@@ -351,9 +346,13 @@ function computeStatus(
   let blockedReason: string | null = null;
   if (!player.alive) blockedReason = 'you are dead';
   else if (required && !skillOk) {
-    blockedReason = `needs ${labelFor(required.id).toLowerCase()} ${required.need}`;
-  } else if (missingTool) blockedReason = `needs a ${labelFor(missingTool).toLowerCase()}`;
-  else if (!affordable) blockedReason = 'not enough materials';
+    blockedReason = t('build.blocked.skill', {
+      skill: t(`skill.${required.id}`),
+      level: required.need,
+    });
+  } else if (missingTool) {
+    blockedReason = t('build.blocked.tool', { tool: t(`tool.${missingTool}`) });
+  } else if (!affordable) blockedReason = 'not enough materials';
 
   return { def, costs, affordable, missingTool, required, skillLevel, skillOk, blockedReason };
 }
@@ -374,30 +373,47 @@ function chip(
 }
 
 /** Hover text for a row: the things worth knowing but not worth a line of layout each. */
-function rowTooltip(status: EntryStatus): string {
+function rowTooltip(ctx: UiContext, status: EntryStatus): string {
   const { def } = status;
   const lines: string[] = [def.name, def.description, ''];
   lines.push(
-    `${def.maxHealth} HP · ${secondsLabel(def.buildTicks)} to build · ${def.width}x${def.height} tiles`,
+    t('build.rowFacts', {
+      hp: def.maxHealth,
+      seconds: secondsLabel(def.buildTicks),
+      width: def.width,
+      height: def.height,
+    }),
   );
   lines.push(
-    `Cost: ${def.cost.map((entry) => `${entry.count}x ${labelFor(entry.defId)}`).join(', ') || 'free'}`,
+    t('build.cost', {
+      cost:
+        def.cost
+          .map((entry) =>
+            t('build.costEntry', {
+              count: entry.count,
+              item: ctx.data.items.get(entry.defId)?.name ?? humanize(entry.defId),
+            }),
+          )
+          .join(', ') || t('build.free'),
+    }),
   );
   if (def.requiredSkill) {
     lines.push(
-      `Skill: ${labelFor(def.requiredSkill.id)} ${status.skillLevel}/${def.requiredSkill.level}`,
+      t('build.skill', {
+        skill: t(`skill.${def.requiredSkill.id}`),
+        have: status.skillLevel,
+        need: def.requiredSkill.level,
+      }),
     );
   }
-  lines.push(def.tool ? `Tool: ${labelFor(def.tool)}` : 'Tool: none');
-  lines.push(
-    def.requiresSupport ? 'Must touch an existing wall or foundation' : `Placed on ${def.placeOn}`,
-  );
+  lines.push(def.tool ? t('build.tool', { tool: t(`tool.${def.tool}`) }) : t('build.toolNone'));
+  lines.push(def.requiresSupport ? t('build.mustTouch') : `Placed on ${def.placeOn}`);
   if (def.stacksOver.length > 0) {
     lines.push(
       `Stacks over: ${def.stacksOver.map((category) => CATEGORY_LABEL[category]).join(', ')}`,
     );
   }
-  if (def.blocksMovement) lines.push('Blocks movement');
+  if (def.blocksMovement) lines.push(t('build.blocksMovement'));
   lines.push(`Refunds ${Math.round(def.refundRatio * 100)}% when demolished`);
   if (status.blockedReason) lines.push('', status.blockedReason);
   return lines.join('\n');
@@ -455,9 +471,7 @@ export function createBuildPanel(): Panel {
       children: [
         el('p', {
           className: 'build-hint muted',
-          html:
-            'Left click in the world to place · <b>T</b> rotates · <b>B</b> closes.' +
-            '<br>The ghost turns red where the server would refuse it.',
+          html: `${t('build.hintPlace')}<br>${t('build.hintGhost')}`,
           attrs: { 'data-testid': 'build-hint' },
         }),
         selection,
@@ -515,15 +529,15 @@ export function createBuildPanel(): Panel {
     view.selection.classList.toggle('build-select--active', selected !== null);
 
     const rotateLeft = button('⟲', () => rotate(ctx, -1));
-    rotateLeft.setAttribute('aria-label', 'Rotate selection anticlockwise');
+    rotateLeft.setAttribute('aria-label', t('build.rotateCcwHint'));
     rotateLeft.setAttribute('data-testid', 'build-rotate-ccw');
-    rotateLeft.title = 'Rotate anticlockwise (Shift+T)';
+    rotateLeft.title = t('build.rotateCcw');
     rotateLeft.disabled = selected === null;
 
     const rotateRight = button('⟳', () => rotate(ctx, 1));
-    rotateRight.setAttribute('aria-label', 'Rotate selection clockwise');
+    rotateRight.setAttribute('aria-label', t('build.rotateCwHint'));
     rotateRight.setAttribute('data-testid', 'build-rotate-cw');
-    rotateRight.title = 'Rotate clockwise (T)';
+    rotateRight.title = t('build.rotateCw');
     rotateRight.disabled = selected === null;
 
     const degrees = ROTATION_DEGREES[rotation] ?? 0;
@@ -536,15 +550,15 @@ export function createBuildPanel(): Panel {
       },
     });
 
-    const clear = button('Clear', () => select(ctx, null), 'danger');
+    const clear = button(t('build.clear'), () => select(ctx, null), 'danger');
     clear.classList.add('build-push');
     clear.setAttribute('data-testid', 'build-clear');
-    clear.setAttribute('aria-label', 'Clear the build selection');
+    clear.setAttribute('aria-label', t('build.clearHint'));
     clear.disabled = selected === null;
 
     const controls = el('div', {
       className: 'build-controls',
-      attrs: { role: 'group', 'aria-label': 'Selection controls' },
+      attrs: { role: 'group', 'aria-label': t('build.selectionControls') },
       children: [rotateLeft, rotationValue, rotateRight, clear],
     });
 
@@ -552,7 +566,7 @@ export function createBuildPanel(): Panel {
       view.selection.replaceChildren(
         el('span', {
           className: 'muted',
-          text: 'Nothing selected. Pick a piece below, then click in the world.',
+          text: t('build.nothingSelected'),
         }),
         controls,
       );
@@ -616,32 +630,41 @@ export function createBuildPanel(): Panel {
       chips.push(
         chip(
           ctx,
-          `${labelFor(status.required.id).toLowerCase()} ${status.skillLevel}/${status.required.need}`,
+          t('build.skillProgress', {
+            skill: t(`skill.${status.required.id}`),
+            have: status.skillLevel,
+            need: status.required.need,
+          }),
           status.skillOk ? 'ok' : 'miss',
-          { title: `Requires ${labelFor(status.required.id)} level ${status.required.need}` },
+          {
+            title: t('build.requiresSkill', {
+              skill: t(`skill.${status.required.id}`),
+              level: status.required.need,
+            }),
+          },
         ),
       );
     }
     if (def.tool) {
       chips.push(
-        chip(ctx, labelFor(def.tool).toLowerCase(), status.missingTool ? 'miss' : 'ok', {
+        chip(ctx, t(`tool.${def.tool}`), status.missingTool ? 'miss' : 'ok', {
           title: status.missingTool
-            ? `You are carrying no ${labelFor(def.tool).toLowerCase()}`
-            : `Uses your ${labelFor(def.tool).toLowerCase()}`,
+            ? t('build.toolMissing', { tool: t(`tool.${def.tool}`) })
+            : t('build.toolUsing', { tool: t(`tool.${def.tool}`) }),
         }),
       );
     }
     if (def.requiresSupport) {
       chips.push(
-        chip(ctx, 'needs support', 'warn', {
-          title: 'Must touch an existing wall or foundation',
+        chip(ctx, t('build.needsSupport'), 'warn', {
+          title: t('build.mustTouch'),
         }),
       );
     }
 
     const row = el('button', {
       className: 'build-row',
-      title: rowTooltip(status),
+      title: rowTooltip(ctx, status),
       attrs: {
         type: 'button',
         'aria-pressed': String(selectedId === def.id),
@@ -690,7 +713,7 @@ export function createBuildPanel(): Panel {
 
     const head = el('button', {
       className: 'build-head',
-      title: `${ready} of ${statuses.length} ready to build`,
+      title: t('build.readyCount', { ready, total: statuses.length }),
       attrs: {
         type: 'button',
         'aria-expanded': String(open),
@@ -708,7 +731,7 @@ export function createBuildPanel(): Panel {
         el('span', {
           className: 'build-head-count',
           text: `${ready}/${statuses.length}`,
-          attrs: { 'aria-label': `${ready} of ${statuses.length} ready` },
+          attrs: { 'aria-label': t('build.readyCount', { ready, total: statuses.length }) },
         }),
       ],
       on: {
@@ -754,14 +777,17 @@ export function createBuildPanel(): Panel {
     );
     const total = groups.reduce((count, entry) => count + entry.statuses.length, 0);
 
-    const toggleAll = button(allOpen ? 'Collapse all' : 'Expand all', () => {
+    const toggleAll = button(allOpen ? t('build.collapseAll') : t('build.expandAll'), () => {
       if (allOpen) expanded.clear();
       else for (const entry of groups) expanded.add(entry.group.category);
     });
     toggleAll.classList.add('build-push');
     toggleAll.setAttribute('data-testid', 'build-toggle-all');
 
-    view.toolbar.replaceChildren(el('span', { text: `${ready} of ${total} buildable` }), toggleAll);
+    view.toolbar.replaceChildren(
+      el('span', { text: t('build.buildableCount', { ready, total }) }),
+      toggleAll,
+    );
     view.groups.replaceChildren(
       ...groups.map((entry) => renderGroup(ctx, entry.group, entry.statuses, selectedId)),
     );
@@ -781,7 +807,12 @@ export function createBuildPanel(): Panel {
       selectionSignature = '';
       listSignature = '';
       seededExpansion = false;
-      const root = panelFrame('Build', () => ctx.close('build'), view.body, 'panel--build');
+      const root = panelFrame(
+        t('panel.build'),
+        () => ctx.close('build'),
+        view.body,
+        'panel--build',
+      );
       root.setAttribute('data-testid', 'build-panel');
       return root;
     },
@@ -795,13 +826,13 @@ export function createBuildPanel(): Panel {
           listSignature = 'none';
           selectionSignature = '';
           view.selection.replaceChildren(
-            el('span', { className: 'muted', text: 'Waiting for the world…' }),
+            el('span', { className: 'muted', text: t('build.waitingWorld') }),
           );
           view.toolbar.replaceChildren();
           view.groups.replaceChildren(
             el('p', {
               className: 'muted',
-              text: 'The build menu fills in once the server has spawned you.',
+              text: t('build.waitingForWorld'),
               attrs: { 'data-testid': 'build-waiting' },
             }),
           );

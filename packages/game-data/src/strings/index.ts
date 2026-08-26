@@ -1,4 +1,5 @@
 import { EN } from './en';
+import { KO } from './ko';
 import type { DisplayText, Locale, StringTable, TextKind } from './types';
 
 export type { DisplayText, Locale, StringTable, TextKind };
@@ -12,6 +13,7 @@ export type { DisplayText, Locale, StringTable, TextKind };
  */
 const TABLES: Record<Locale, StringTable> = {
   en: EN,
+  ko: KO,
 };
 
 export const DEFAULT_LOCALE: Locale = 'en';

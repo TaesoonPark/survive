@@ -13,6 +13,3 @@ export interface UiStringTable {
   /** Interface chrome: titles, labels, buttons, prompts. */
   ui: Record<string, string>;
 }
-
-/** Languages the interface ships text for. */
-export type UiLocale = 'en';

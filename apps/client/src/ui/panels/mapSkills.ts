@@ -5,7 +5,6 @@ import {
   TILE_SIZE,
   Tile,
   WORLD_TILES,
-  biomeProps,
   chunkKey,
   type ChunkPayload,
   type PlayerState,
@@ -178,12 +177,12 @@ const UNEXPLORED_COLOR = 0x0a0e0f;
 
 /** Legend entries. The colours are literally the ones the terrain pass writes. */
 const LEGEND: readonly { label: string; tile: number }[] = [
-  { label: 'Grass', tile: Tile.Grass },
-  { label: 'Water', tile: Tile.WaterDeep },
-  { label: 'Road', tile: Tile.RoadAsphalt },
-  { label: 'Building', tile: Tile.WallConcrete },
-  { label: 'Sand', tile: Tile.Sand },
-  { label: 'Snow', tile: Tile.Snow },
+  { label: t('map.legend.grass'), tile: Tile.Grass },
+  { label: t('map.legend.water'), tile: Tile.WaterDeep },
+  { label: t('map.legend.road'), tile: Tile.RoadAsphalt },
+  { label: t('map.legend.building'), tile: Tile.WallConcrete },
+  { label: t('map.legend.sand'), tile: Tile.Sand },
+  { label: t('map.legend.snow'), tile: Tile.Snow },
 ];
 
 interface MapParts {
@@ -261,7 +260,7 @@ export function createMapPanel(): Panel {
       className: 'map-canvas',
       attrs: {
         role: 'img',
-        'aria-label': 'Local map of explored terrain',
+        'aria-label': t('map.mapLabel'),
         'data-testid': 'map-canvas',
       },
     });
@@ -315,21 +314,21 @@ export function createMapPanel(): Panel {
       attrs: { 'data-testid': 'map-zoom-value', 'aria-live': 'polite' },
       // Seeded so the control reads correctly before the first snapshot arrives; every
       // redraw rewrites it.
-      text: `${zoom()} px/tile`,
+      text: t('map.pxPerTile', { scale: zoom() }),
     });
 
     const zoomOut = button('−', () => stepZoom(-1));
     zoomOut.classList.add('map-zoom');
-    zoomOut.setAttribute('aria-label', 'Zoom out');
+    zoomOut.setAttribute('aria-label', t('map.zoomOut'));
     zoomOut.setAttribute('data-testid', 'map-zoom-out');
 
     const zoomIn = button('+', () => stepZoom(1));
     zoomIn.classList.add('map-zoom');
-    zoomIn.setAttribute('aria-label', 'Zoom in');
+    zoomIn.setAttribute('aria-label', t('map.zoomIn'));
     zoomIn.setAttribute('data-testid', 'map-zoom-in');
 
     const recentre = button(
-      'Centre on me',
+      t('map.centreOnMe'),
       () => {
         follow = true;
         drawSignature = '';
@@ -342,11 +341,11 @@ export function createMapPanel(): Panel {
       const dd = el('dd', { attrs: { 'data-testid': testId }, text: '—' });
       return { dd, nodes: [el('dt', { text: label }), dd] };
     };
-    const coordsRow = makeRow('Tile', 'map-coords');
-    const chunkRow = makeRow('Chunk', 'map-chunk');
-    const biomeRow = makeRow('Biome', 'map-biome');
-    const viewRow = makeRow('View', 'map-view');
-    const biomesRow = makeRow('In view', 'map-biomes');
+    const coordsRow = makeRow(t('map.tile'), 'map-coords');
+    const chunkRow = makeRow(t('map.chunk'), 'map-chunk');
+    const biomeRow = makeRow(t('map.biome'), 'map-biome');
+    const viewRow = makeRow(t('map.view'), 'map-view');
+    const biomesRow = makeRow(t('map.inView'), 'map-biomes');
 
     const readout = el('dl', {
       className: 'map-readout',
@@ -619,12 +618,14 @@ export function createMapPanel(): Panel {
     const named = [...pass.biomes.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4)
-      .map(([id]) => biomeProps(id).name);
-    view.biomesInView.textContent = named.length > 0 ? named.join(', ') : 'nothing explored';
-    view.view.textContent = `${scale} px/tile · ${chunks.length} chunk${
-      chunks.length === 1 ? '' : 's'
-    } · ${follow ? 'following you' : 'free look'}`;
-    view.zoomValue.textContent = `${scale} px/tile`;
+      .map(([id]) => t(`biome.${id}`));
+    view.biomesInView.textContent = named.length > 0 ? named.join(', ') : t('map.nothingExplored');
+    view.view.textContent = t('map.viewLine', {
+      scale,
+      chunks: chunks.length,
+      mode: t(follow ? 'map.following' : 'map.freeLook'),
+    });
+    view.zoomValue.textContent = t('map.pxPerTile', { scale });
   }
 
   return {
@@ -651,7 +652,7 @@ export function createMapPanel(): Panel {
       readoutSignature = '';
       lastDrawMs = 0;
 
-      const root = panelFrame('Map', () => ctx.close('map'), view.body, 'panel--map');
+      const root = panelFrame(t('panel.map'), () => ctx.close('map'), view.body, 'panel--map');
       root.setAttribute('data-testid', 'map-panel');
       return root;
     },
@@ -664,7 +665,7 @@ export function createMapPanel(): Panel {
           readoutSignature = 'none';
           view.coords.textContent = '—';
           view.chunkLabel.textContent = '—';
-          view.biome.textContent = 'waiting for the world…';
+          view.biome.textContent = t('map.waitingForWorld');
         }
         return;
       }
@@ -687,7 +688,8 @@ export function createMapPanel(): Panel {
         readoutSignature = nextReadout;
         view.coords.textContent = `${playerTileX}, ${playerTileY}`;
         view.chunkLabel.textContent = chunkKey(chunkCx, chunkCy);
-        view.biome.textContent = biomeId === undefined ? 'unknown' : biomeProps(biomeId).name;
+        view.biome.textContent =
+          biomeId === undefined ? t('map.unknownBiome') : t(`biome.${biomeId}`);
       }
 
       const now = performance.now();
@@ -780,16 +782,16 @@ const SKILL_EFFECTS: Readonly<Record<SkillId, string>> = {
 
 /** Lifetime counters, in the order the sheet lists them. */
 const STAT_ROWS: readonly { key: keyof PlayerStats; label: string; kind: 'count' | 'tiles' }[] = [
-  { key: 'daysSurvived', label: 'Days survived', kind: 'count' },
-  { key: 'deaths', label: 'Deaths', kind: 'count' },
-  { key: 'zombieKills', label: 'Zombies killed', kind: 'count' },
-  { key: 'animalKills', label: 'Animals killed', kind: 'count' },
-  { key: 'playerKills', label: 'Players killed', kind: 'count' },
-  { key: 'distanceTravelled', label: 'Tiles travelled', kind: 'tiles' },
-  { key: 'resourcesGathered', label: 'Resources gathered', kind: 'count' },
-  { key: 'itemsCrafted', label: 'Items crafted', kind: 'count' },
-  { key: 'structuresBuilt', label: 'Structures built', kind: 'count' },
-  { key: 'cropsHarvested', label: 'Crops harvested', kind: 'count' },
+  { key: 'daysSurvived', label: t('map.stat.daysSurvived'), kind: 'count' },
+  { key: 'deaths', label: t('map.stat.deaths'), kind: 'count' },
+  { key: 'zombieKills', label: t('map.stat.zombiesKilled'), kind: 'count' },
+  { key: 'animalKills', label: t('map.stat.animalsKilled'), kind: 'count' },
+  { key: 'playerKills', label: t('map.stat.playersKilled'), kind: 'count' },
+  { key: 'distanceTravelled', label: t('map.stat.tilesTravelled'), kind: 'tiles' },
+  { key: 'resourcesGathered', label: t('map.stat.resourcesGathered'), kind: 'count' },
+  { key: 'itemsCrafted', label: t('map.stat.itemsCrafted'), kind: 'count' },
+  { key: 'structuresBuilt', label: t('map.stat.structuresBuilt'), kind: 'count' },
+  { key: 'cropsHarvested', label: t('map.stat.cropsHarvested'), kind: 'count' },
 ];
 
 /**
@@ -882,7 +884,7 @@ export function createSkillsPanel(): Panel {
     if (body) return body;
     list = el('ul', {
       className: 'skills-list',
-      attrs: { 'data-testid': 'skills-list', 'aria-label': 'Skills' },
+      attrs: { 'data-testid': 'skills-list', 'aria-label': t('panel.skills') },
     });
     stats = el('dl', {
       className: 'skills-stats',
@@ -890,7 +892,7 @@ export function createSkillsPanel(): Panel {
     });
     body = el('div', {
       className: 'panel-body skills-body',
-      children: [list, el('div', { className: 'section-title', text: 'Lifetime' }), stats],
+      children: [list, el('div', { className: 'section-title', text: t('map.lifetime') }), stats],
     });
     return body;
   }
@@ -919,7 +921,7 @@ export function createSkillsPanel(): Panel {
       injectMapSkillsStyles();
       const view = ensureBody();
       signature = '';
-      const root = panelFrame('Skills', () => ctx.close('skills'), view, 'panel--skills');
+      const root = panelFrame(t('panel.skills'), () => ctx.close('skills'), view, 'panel--skills');
       root.setAttribute('data-testid', 'skills-panel');
       return root;
     },
@@ -931,7 +933,7 @@ export function createSkillsPanel(): Panel {
       if (!player) {
         if (signature !== 'none') {
           signature = 'none';
-          list.replaceChildren(el('li', { className: 'muted', text: 'Waiting for the world…' }));
+          list.replaceChildren(el('li', { className: 'muted', text: t('map.waitingForWorld') }));
           stats.replaceChildren();
         }
         return;

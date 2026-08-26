@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { computeDataVersion, defaultTables, localizeTables } from '../gameData';
 import { EN } from './en';
-import { stringTable, type TextKind } from './index';
+import { KO } from './ko';
+import { stringTable, type Locale, type TextKind } from './index';
 
 /**
  * The locale table and the content tables have to describe the same world.
@@ -27,6 +28,37 @@ describe('display text', () => {
 
   it('covers the whole content set, so this is not a spot check', () => {
     expect(kinds.reduce((total, k) => total + k.ids.length, 0)).toBeGreaterThan(350);
+  });
+
+  /** Every shipped locale, so a second language is held to the same bar as the first. */
+  const locales: Locale[] = ['en', 'ko'];
+
+  it.each(locales)('%s covers every definition, and nothing else', (locale) => {
+    const table = stringTable(locale);
+    for (const { kind, ids } of kinds) {
+      const missing = ids.filter((id) => !table[kind][id]?.name);
+      expect(missing, `${locale} is missing ${kind}: ${missing.join(', ')}`).toEqual([]);
+      const known = new Set(ids);
+      const orphans = Object.keys(table[kind]).filter((id) => !known.has(id));
+      expect(orphans, `${locale} has stale ${kind}: ${orphans.join(', ')}`).toEqual([]);
+    }
+  });
+
+  it.each(locales)('%s says something different from the ids', (locale) => {
+    // A locale that fell back to ids everywhere would pass the coverage test above.
+    const table = stringTable(locale);
+    for (const { kind, ids } of kinds) {
+      for (const id of ids) expect(table[kind][id]!.name, `${locale} ${kind} ${id}`).not.toBe(id);
+    }
+  });
+
+  it('translates rather than copying English', () => {
+    // Not a quality check - it cannot be - but it does catch a locale file left half done,
+    // which is what a wall of identical strings means.
+    const shared = EN.items;
+    const other = KO.items;
+    const identical = Object.keys(shared).filter((id) => shared[id]!.name === other[id]!.name);
+    expect(identical.length, `untranslated item names: ${identical.join(', ')}`).toBeLessThan(5);
   });
 
   describe.each(kinds)('$kind', ({ kind, ids, describes }) => {

@@ -276,11 +276,6 @@ function injectCraftingStyles(): void {
   document.head.append(style);
 }
 
-/** Turn `cookingPot` or `wood_log` into `Cooking Pot` / `Wood Log`. */
-function labelFor(id: string): string {
-  return humanize(id.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase());
-}
-
 /** Craft durations live in ticks; players think in seconds. */
 function secondsLabel(ticks: number): string {
   const value = ticks / SIM_HZ;
@@ -454,8 +449,10 @@ function resolveInput(
 ): InputStatus {
   const label =
     input.tag === undefined
-      ? (ctx.data.items.get(input.defId)?.name ?? labelFor(input.defId))
-      : `any ${labelFor(input.tag)}`;
+      ? (ctx.data.items.get(input.defId)?.name ?? humanize(input.defId))
+      : // No shipped recipe takes a tag input, so this has no table entry to look up - it is
+        // a data-driven open set, and `humanize` is the honest answer for an unknown id.
+        t('craft.anyTag', { tag: humanize(input.tag) });
 
   if (input.consumeDurability !== undefined && input.consumeDurability > 0) {
     // A worn input is checked against the item's remaining durability, not against a
@@ -556,25 +553,30 @@ function computeStatus(
     recipe.fuelCost !== undefined &&
     station.fuel < recipe.fuelCost
   ) {
-    warnings.push('low on fuel');
+    warnings.push(t('craft.reason.lowFuel'));
   }
-  if (!mayHaveRoom(ctx, player, recipe)) warnings.push('your pack may be full');
+  if (!mayHaveRoom(ctx, player, recipe)) warnings.push(t('craft.reason.packFull'));
 
   let blockedReason: string | null = null;
-  if (!player.alive) blockedReason = 'you are dead';
-  else if (!unlocked) blockedReason = 'you have not learned that recipe';
+  if (!player.alive) blockedReason = t('craft.reason.dead');
+  else if (!unlocked) blockedReason = t('craft.reason.notLearned');
   else if (required && skillLevel < required.level) {
-    blockedReason = `needs ${labelFor(required.id).toLowerCase()} level ${required.level}`;
+    blockedReason = t('craft.blocked.skill', {
+      skill: t(`skill.${required.id}`),
+      level: required.level,
+    });
   } else if (recipe.station !== undefined && !station) {
-    blockedReason = `needs a ${labelFor(recipe.station).toLowerCase()} nearby`;
+    blockedReason = t('craft.blocked.station', { station: t(`station.${recipe.station}`) });
   } else if (station && recipe.requiresHeat && !station.lit) {
-    blockedReason = 'the station is not lit';
-  } else if (queueDepth >= MAX_QUEUED_JOBS) blockedReason = 'that crafting queue is full';
+    blockedReason = t('craft.reason.notLit');
+  } else if (queueDepth >= MAX_QUEUED_JOBS) blockedReason = t('craft.reason.queueFull');
   else if (missingTools.length > 0) {
-    blockedReason = `needs ${missingTools.map((kind) => labelFor(kind).toLowerCase()).join(', ')}`;
+    blockedReason = t('craft.blocked.tools', {
+      tools: missingTools.map((kind) => t(`tool.${kind}`)).join(', '),
+    });
   } else if (maxCount < 1) {
     const short = inputs.find((input) => !input.ok);
-    blockedReason = short ? `needs ${short.need} x ${short.label}` : 'not enough materials';
+    blockedReason = short ? `needs ${short.need} x ${short.label}` : t('craft.reason.noMaterials');
   }
 
   return {
@@ -629,7 +631,7 @@ function collectQueue(player: PlayerState, nearby: readonly NearbyStation[]): Qu
     entries.push({
       job,
       stationId: undefined,
-      where: 'By hand',
+      where: t('craft.byHand'),
       active: index === 0,
       cancellable: true,
     });
@@ -722,8 +724,8 @@ export function createCraftingPanel(): Panel {
       className: 'craft-search',
       attrs: {
         type: 'search',
-        placeholder: 'Search recipes or outputs',
-        'aria-label': 'Search recipes',
+        placeholder: t('craft.searchPlaceholder'),
+        'aria-label': t('craft.searchLabel'),
         'data-testid': 'craft-search',
       },
       on: {
@@ -735,13 +737,13 @@ export function createCraftingPanel(): Panel {
 
     const stationSelect = el('select', {
       className: 'craft-select',
-      attrs: { 'aria-label': 'Filter by station', 'data-testid': 'craft-station-filter' },
+      attrs: { 'aria-label': t('craft.filterByStation'), 'data-testid': 'craft-station-filter' },
       children: [
-        el('option', { text: 'Available here', attrs: { value: 'available' } }),
-        el('option', { text: 'All stations', attrs: { value: 'all' } }),
-        el('option', { text: 'By hand', attrs: { value: 'hand' } }),
+        el('option', { text: t('craft.availableHere'), attrs: { value: 'available' } }),
+        el('option', { text: t('craft.allStations'), attrs: { value: 'all' } }),
+        el('option', { text: t('craft.byHand'), attrs: { value: 'hand' } }),
         ...STATION_KINDS.map((kind) =>
-          el('option', { text: labelFor(kind), attrs: { value: kind } }),
+          el('option', { text: t(`station.${kind}`), attrs: { value: kind } }),
         ),
       ],
       on: {
@@ -768,12 +770,12 @@ export function createCraftingPanel(): Panel {
       className: 'craft-cats',
       attrs: {
         role: 'group',
-        'aria-label': 'Recipe categories',
+        'aria-label': t('craft.categories'),
         'data-testid': 'craft-categories',
       },
       children: [
-        makeCategory('all', 'All'),
-        ...CATEGORIES.map((id) => makeCategory(id, labelFor(id))),
+        makeCategory('all', t('craft.all')),
+        ...CATEGORIES.map((id) => makeCategory(id, t(`craft.cat.${id}`))),
       ],
     });
 
@@ -783,7 +785,7 @@ export function createCraftingPanel(): Panel {
     });
     const list = el('div', {
       className: 'craft-list',
-      attrs: { role: 'list', 'aria-label': 'Recipes', 'data-testid': 'craft-list' },
+      attrs: { role: 'list', 'aria-label': t('craft.recipes'), 'data-testid': 'craft-list' },
     });
     const detail = el('div', {
       className: 'craft-detail',
@@ -806,7 +808,7 @@ export function createCraftingPanel(): Panel {
         detail,
         el('div', {
           className: 'col',
-          children: [el('div', { className: 'section-title', text: 'In progress' }), queue],
+          children: [el('div', { className: 'section-title', text: t('craft.inProgress') }), queue],
         }),
       ],
     });
@@ -856,11 +858,17 @@ export function createCraftingPanel(): Panel {
 
     // Category, where the work happens, and the gating skill with the level the player
     // actually has next to it - the whole point of showing it is the comparison.
-    const subParts = [labelFor(recipe.category)];
-    subParts.push(recipe.station === undefined ? 'by hand' : labelFor(recipe.station));
+    const subParts = [t(`craft.cat.${recipe.category}`)];
+    subParts.push(
+      recipe.station === undefined ? t('craft.byHandLower') : t(`station.${recipe.station}`),
+    );
     if (status.skillNeeded !== null && recipe.requiredSkill) {
       subParts.push(
-        `${labelFor(recipe.requiredSkill.id).toLowerCase()} ${status.skillLevel}/${status.skillNeeded}`,
+        t('craft.skillProgress', {
+          skill: t(`skill.${recipe.requiredSkill.id}`),
+          have: status.skillLevel,
+          need: status.skillNeeded,
+        }),
       );
     }
 
@@ -880,12 +888,12 @@ export function createCraftingPanel(): Panel {
       chips.push(
         chip(
           ctx,
-          labelFor(kind).toLowerCase(),
+          t(`tool.${kind}`),
           missing ? 'miss' : 'ok',
           undefined,
           missing
-            ? `You have no ${labelFor(kind).toLowerCase()}`
-            : `Using your ${labelFor(kind).toLowerCase()}`,
+            ? t('craft.toolMissing', { tool: t(`tool.${kind}`) })
+            : t('craft.toolUsing', { tool: t(`tool.${kind}`) }),
         ),
       );
     }
@@ -893,10 +901,10 @@ export function createCraftingPanel(): Panel {
       chips.push(
         chip(
           ctx,
-          'schematic',
+          t('craft.schematicChip'),
           status.unlocked ? 'ok' : 'warn',
           undefined,
-          status.unlocked ? 'You are carrying the schematic' : 'Find the schematic to learn this',
+          status.unlocked ? t('craft.haveSchematic') : t('craft.needSchematic'),
         ),
       );
     }
@@ -942,7 +950,7 @@ export function createCraftingPanel(): Panel {
       view.list.replaceChildren(
         el('p', {
           className: 'muted',
-          text: 'No recipes match that filter.',
+          text: t('craft.noMatch'),
           attrs: { 'data-testid': 'craft-empty' },
         }),
       );
@@ -956,12 +964,12 @@ export function createCraftingPanel(): Panel {
     const view = ensureParts();
     if (nearby.length === 0) {
       view.nearbyRow.replaceChildren(
-        el('span', { className: 'muted', text: 'No station in reach — hand recipes only.' }),
+        el('span', { className: 'muted', text: t('craft.noStation') }),
       );
       return;
     }
     view.nearbyRow.replaceChildren(
-      el('span', { className: 'muted', text: 'In reach:' }),
+      el('span', { className: 'muted', text: t('craft.inReach') }),
       ...nearby.map((station) =>
         el('span', {
           className: `effect-chip${station.needsFuel && !station.lit ? '' : ' effect-chip--good'}`,
@@ -979,9 +987,7 @@ export function createCraftingPanel(): Panel {
   function renderDetail(ctx: UiContext, status: RecipeStatus | null): void {
     const view = ensureParts();
     if (!status) {
-      view.detail.replaceChildren(
-        el('p', { className: 'muted', text: 'Select a recipe to craft it.' }),
-      );
+      view.detail.replaceChildren(el('p', { className: 'muted', text: t('craft.selectPrompt') }));
       return;
     }
 
@@ -999,16 +1005,20 @@ export function createCraftingPanel(): Panel {
     const facts: string[] = [`${secondsLabel(recipe.craftTicks)} per unit`];
     facts.push(
       recipe.station === undefined
-        ? 'craftable by hand'
-        : `at a ${labelFor(recipe.station).toLowerCase()}`,
+        ? t('craft.byHandNote')
+        : t('craft.atStation', { station: t(`station.${recipe.station}`) }),
     );
     if (recipe.requiredSkill) {
       facts.push(
-        `${labelFor(recipe.requiredSkill.id).toLowerCase()} ${status.skillLevel}/${recipe.requiredSkill.level}`,
+        t('craft.skillProgress', {
+          skill: t(`skill.${recipe.requiredSkill.id}`),
+          have: status.skillLevel,
+          need: recipe.requiredSkill.level,
+        }),
       );
     }
     if (recipe.fuelCost !== undefined) facts.push(`${recipe.fuelCost} fuel`);
-    if (recipe.requiresHeat) facts.push('needs heat');
+    if (recipe.requiresHeat) facts.push(t('craft.needsHeat'));
 
     const inputChips = status.inputs.map((input) =>
       chip(
@@ -1020,7 +1030,7 @@ export function createCraftingPanel(): Panel {
     );
     for (const kind of recipe.tools) {
       inputChips.push(
-        chip(ctx, labelFor(kind).toLowerCase(), status.missingTools.includes(kind) ? 'miss' : 'ok'),
+        chip(ctx, t(`tool.${kind}`), status.missingTools.includes(kind) ? 'miss' : 'ok'),
       );
     }
 
@@ -1085,7 +1095,7 @@ export function createCraftingPanel(): Panel {
         children: [
           el('div', {
             className: 'craft-qty',
-            attrs: { role: 'group', 'aria-label': 'Quantity' },
+            attrs: { role: 'group', 'aria-label': t('craft.quantity') },
             children: [
               makeQuantity('one', '1'),
               makeQuantity('five', '5'),
@@ -1109,21 +1119,21 @@ export function createCraftingPanel(): Panel {
     progressNodes.clear();
 
     if (entries.length === 0) {
-      view.queue.replaceChildren(el('p', { className: 'muted', text: 'Nothing being crafted.' }));
+      view.queue.replaceChildren(el('p', { className: 'muted', text: t('craft.nothingCrafting') }));
       return;
     }
 
     view.queue.replaceChildren(
       ...entries.map((entry) => {
         const recipe = ctx.data.recipes.get(entry.job.recipeId);
-        const name = recipe?.name ?? labelFor(entry.job.recipeId);
+        const name = recipe?.name ?? humanize(entry.job.recipeId);
         const fill = el('div', { className: 'bar-fill' });
         fill.style.background = cssColor(entry.job.blockedReason ? UI.warn : UI.accent);
         const value = el('span', { className: 'bar-value', text: '0%' });
         progressNodes.set(entry.job.jobId, { fill, value });
 
         const cancel = button(
-          'Cancel',
+          t('craft.cancel'),
           () => {
             // The server refunds every unstarted unit; the one under the hammer is lost.
             ctx.send({
@@ -1208,7 +1218,12 @@ export function createCraftingPanel(): Panel {
       nearbySignature = FORCE;
       detailSignature = FORCE;
       queueSignature = FORCE;
-      const root = panelFrame('Crafting', () => ctx.close('crafting'), view.body, 'panel--craft');
+      const root = panelFrame(
+        t('panel.crafting'),
+        () => ctx.close('crafting'),
+        view.body,
+        'panel--craft',
+      );
       root.setAttribute('data-testid', 'crafting-panel');
       return root;
     },
@@ -1224,7 +1239,7 @@ export function createCraftingPanel(): Panel {
           detailSignature = FORCE;
           queueSignature = FORCE;
           view.list.replaceChildren(
-            el('p', { className: 'muted', text: 'Waiting for the world…' }),
+            el('p', { className: 'muted', text: t('craft.waitingForWorld') }),
           );
           view.nearbyRow.replaceChildren();
           view.detail.replaceChildren();
