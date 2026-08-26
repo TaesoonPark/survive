@@ -236,7 +236,10 @@ export async function createBots(
   // Sequential on purpose: a simultaneous rush would exercise matchmaking races
   // rather than the gameplay the caller is trying to test.
   for (const name of names) {
-    bots.push(await createBot({ ...extra, url, name, playerId: name.toLowerCase() }));
+    // No `playerId`: the server derives it from the name, exactly as the real client does.
+    // Passing one here meant the tests exercised a rule of their own rather than the one
+    // that ships - and this copy flattened non-ASCII names the way the shipping bug did.
+    bots.push(await createBot({ ...extra, url, name }));
   }
   return bots;
 }

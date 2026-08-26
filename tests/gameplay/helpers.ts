@@ -112,6 +112,44 @@ export async function holdKey(page: Page, key: string, ms: number): Promise<void
   await page.waitForTimeout(300);
 }
 
+/**
+ * Wait until the player has at least this much stamina.
+ *
+ * Needed because every gameplay spec shares one server and one character: a test that
+ * chopped a tree leaves the next one short of breath, and sprinting silently degrades to
+ * walking below `SPRINT_STAMINA_FLOOR`. Standing still is what regenerates it.
+ */
+export async function waitForStamina(page: Page, atLeast: number): Promise<void> {
+  await page.waitForFunction(
+    (target) => (window.__survive?.self()?.stamina ?? 0) >= target,
+    atLeast,
+    { timeout: 30_000 },
+  );
+}
+
+/**
+ * Hold each direction briefly and return whichever moved the player furthest.
+ *
+ * The specs share one save, so where the player is standing - and which way is walled off -
+ * depends on what ran before. A test that assumes east is open grades a sprint against a
+ * wall as "no faster than walking".
+ */
+export async function openDirection(page: Page): Promise<string> {
+  let best = 'KeyD';
+  let furthest = 0;
+  for (const code of ['KeyD', 'KeyA', 'KeyS', 'KeyW']) {
+    const from = await predicted(page);
+    await holdKey(page, code, 260);
+    const to = await predicted(page);
+    const moved = Math.hypot(to.x - from.x, to.y - from.y);
+    if (moved > furthest) {
+      furthest = moved;
+      best = code;
+    }
+  }
+  return best;
+}
+
 /** Wait until the world tick has advanced, proving the server is simulating. */
 export async function waitForTicks(page: Page, ticks: number): Promise<void> {
   const start = (await world(page))?.tick ?? 0;

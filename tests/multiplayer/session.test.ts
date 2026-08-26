@@ -375,3 +375,40 @@ describe('malformed messages', () => {
     expect(server.server.stats().loadedChunks).toBeLessThanOrEqual(before);
   });
 });
+
+describe('character identity', () => {
+  it('gives two differently-named players two characters, in any script', async () => {
+    server = await createLiveServer({ maxPlayers: 4 });
+    // Korean names, because that is where this broke: the id was built by stripping
+    // everything outside `[a-z0-9_-]`, which erased these entirely and left both players
+    // sharing the single fallback character. Renaming did nothing, and the second player
+    // to connect was told the character was taken.
+    const [first, second] = await createBots(server.url, ['홍길동', '김철수']);
+    bots.push(first!, second!);
+
+    expect(first!.self, 'the first player should have a character').not.toBeNull();
+    expect(second!.self, 'the second player should have a character').not.toBeNull();
+    expect(first!.self!.id).not.toBe(second!.self!.id);
+    expect(Object.keys(server.server.simulation.state.players)).toHaveLength(2);
+
+    // The names survive as display names even though the ids cannot spell them.
+    expect(first!.self!.name).toBe('홍길동');
+    expect(second!.self!.name).toBe('김철수');
+  });
+
+  it('brings the same name back to the same character', async () => {
+    server = await createLiveServer({ maxPlayers: 4 });
+    const [first] = await createBots(server.url, ['홍길동']);
+    bots.push(first!);
+    const id = first!.self!.id;
+    await first!.leave();
+    bots = [];
+
+    // Reconnecting is how a player resumes: an id derived from anything unstable - a
+    // session id, a clock, a random - would strand the character it just made.
+    const [again] = await createBots(server.url, ['홍길동']);
+    bots.push(again!);
+    expect(again!.self!.id).toBe(id);
+    expect(Object.keys(server.server.simulation.state.players)).toHaveLength(1);
+  });
+});

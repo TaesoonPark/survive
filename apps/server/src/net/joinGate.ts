@@ -37,13 +37,46 @@ export function sanitizeName(raw: unknown): string {
 }
 
 /**
+ * A short, stable digest of a string, in base 36.
+ *
+ * FNV-1a, written out rather than imported: this needs to be deterministic across runs and
+ * across machines, which rules out anything seeded, and a hash table's worth of collision
+ * resistance is more than enough here - a collision means two players share a character,
+ * which is exactly what happens today for every one of them.
+ */
+function shortHash(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    // The FNV prime, as shifts, because a plain multiply overflows into a float.
+    hash = (hash + ((hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24))) >>> 0;
+  }
+  return hash.toString(36).padStart(7, '0').slice(-7);
+}
+
+/**
  * Reduce an arbitrary string to a safe persistence key.
  *
- * Player ids become filenames, so anything that could escape a directory or collide
- * across cases has to go.
+ * Player ids become filenames, so anything that could escape a directory or collide across
+ * cases has to go - the persistence layer only accepts `[A-Za-z0-9 ._@-]`, which is why the
+ * id cannot simply keep the name's own characters.
+ *
+ * Stripping is not enough on its own, because it is lossy in a way that silently merges
+ * people. Every name written in Korean, Chinese, Japanese, Cyrillic or Greek reduced to the
+ * same empty string and then to the same fallback: `홍길동` and `김철수` were both
+ * `survivor`, one character shared by everyone whose name is not spelled in ASCII, and
+ * changing your name did nothing at all. Accented Latin lost pieces the same way - `Ålex`
+ * became `lex`, which is also a different person's name.
+ *
+ * So when cleaning loses something, the id keeps a digest of what it lost. Names that
+ * survive cleaning intact are untouched, which matters: `Tester` is still `tester`, so
+ * existing characters keep their save.
  */
 export function sanitizePlayerId(raw: unknown): string {
-  const text = typeof raw === 'string' ? raw : '';
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  // Nothing was supplied, so there is nothing to distinguish: the plain fallback, not a
+  // digest of the empty string.
+  if (text.length === 0) return 'survivor';
   const cleaned = text
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '_')
@@ -51,7 +84,12 @@ export function sanitizePlayerId(raw: unknown): string {
     .replace(/_{2,}/g, '_')
     .replace(/^_+|_+$/g, '')
     .slice(0, 48);
-  return cleaned.length > 0 ? cleaned : 'survivor';
+  // Did cleaning change anything beyond case? If not, the slug identifies the name on its
+  // own and no digest is needed.
+  const faithful = cleaned.length > 0 && cleaned === text.toLowerCase();
+  if (faithful) return cleaned;
+  const base = cleaned.length > 0 ? cleaned.slice(0, 40) : 'survivor';
+  return `${base}-${shortHash(text)}`;
 }
 
 /** How long a reserved-but-unconnected claim is held before it is reaped. */

@@ -1,5 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { holdKey, joinServer, net, openClient, predicted, self } from './helpers';
+import {
+  holdKey,
+  joinServer,
+  net,
+  openClient,
+  openDirection,
+  predicted,
+  self,
+  waitForStamina,
+} from './helpers';
 
 /**
  * WASD, prediction and reconciliation (spec sections 1 and 17).
@@ -58,17 +67,26 @@ test.describe('movement', () => {
     await openClient(page);
     await joinServer(page);
 
-    const walkStart = await self(page);
-    await holdKey(page, 'KeyD', 600);
-    const walkEnd = await self(page);
-    const walked = Math.abs(walkEnd.x - walkStart.x);
+    // Both preconditions are established rather than inherited. Every gameplay spec shares
+    // one server and one character, so by the time this runs the player may be out of
+    // breath from felling a tree two files ago - and sprinting below the stamina floor
+    // silently degrades to walking, which reads here as "sprinting is not faster".
+    const heading = await openDirection(page);
+    await waitForStamina(page, 60);
 
+    const walkStart = await self(page);
+    await holdKey(page, heading, 600);
+    const walkEnd = await self(page);
+    const walked = Math.hypot(walkEnd.x - walkStart.x, walkEnd.y - walkStart.y);
+    expect(walked, `nothing to compare: ${heading} is blocked`).toBeGreaterThan(10);
+
+    await waitForStamina(page, 60);
     await page.keyboard.down('ShiftLeft');
     const sprintStart = await self(page);
-    await holdKey(page, 'KeyD', 600);
+    await holdKey(page, heading, 600);
     const sprintEnd = await self(page);
     await page.keyboard.up('ShiftLeft');
-    const sprinted = Math.abs(sprintEnd.x - sprintStart.x);
+    const sprinted = Math.hypot(sprintEnd.x - sprintStart.x, sprintEnd.y - sprintStart.y);
 
     expect(sprinted).toBeGreaterThan(walked);
     expect(sprintEnd.stamina).toBeLessThan(sprintStart.stamina);

@@ -25,26 +25,82 @@ describe('sanitizeName', () => {
 });
 
 describe('sanitizePlayerId', () => {
+  /** The persistence layer's own rule for a filename, restated so this can check against it. */
+  const FILENAME_SAFE = /^[A-Za-z0-9 ._@-]+$/;
+
   it('lowercases and keeps only safe characters', () => {
     expect(sanitizePlayerId('Alice_01')).toBe('alice_01');
-    expect(sanitizePlayerId('Bob Smith')).toBe('bob_smith');
+    expect(sanitizePlayerId('survivor')).toBe('survivor');
   });
 
   it('refuses to let a name escape the saves folder', () => {
     // Player ids become filenames, so traversal has to be impossible by construction.
-    expect(sanitizePlayerId('../../etc/passwd')).toBe('etc_passwd');
-    expect(sanitizePlayerId('..')).toBe('survivor');
-    expect(sanitizePlayerId('/')).toBe('survivor');
-    expect(sanitizePlayerId('C:\\Windows')).toBe('c_windows');
+    for (const attack of ['../../etc/passwd', '..', '/', 'C:\\Windows', '\u0000nul']) {
+      const id = sanitizePlayerId(attack);
+      expect(id, attack).toMatch(FILENAME_SAFE);
+      expect(id, attack).not.toContain('/');
+      expect(id, attack).not.toContain('\\');
+      expect(id, attack).not.toContain('..');
+    }
   });
 
-  it('collapses to a usable default', () => {
+  it('collapses to a usable default when there is nothing to work with', () => {
     expect(sanitizePlayerId('')).toBe('survivor');
-    expect(sanitizePlayerId('!!!')).toBe('survivor');
+    expect(sanitizePlayerId('   ')).toBe('survivor');
+    expect(sanitizePlayerId(undefined)).toBe('survivor');
   });
 
   it('is case-insensitive, so two players cannot share a character by casing', () => {
     expect(sanitizePlayerId('Alice')).toBe(sanitizePlayerId('ALICE'));
+  });
+
+  it('gives different names different characters, whatever they are written in', () => {
+    // The bug this guards: stripping to `[a-z0-9_-]` erased every Korean, Chinese,
+    // Japanese, Cyrillic and Greek name to the empty string, which then became the same
+    // fallback. `홍길동` and `김철수` were both `survivor` - one character shared by
+    // everyone whose name is not spelled in ASCII, and renaming did nothing at all.
+    const names = [
+      '홍길동',
+      '김철수',
+      '박태순',
+      '玩家一',
+      '玩家二',
+      'Алексей',
+      'Ålex',
+      'Alex',
+      'Bob Smith',
+      'Bob_Smith',
+    ];
+    const ids = names.map((name) => sanitizePlayerId(name));
+    expect(new Set(ids).size, `collisions in ${JSON.stringify(ids)}`).toBe(names.length);
+  });
+
+  it('produces ids the save layer will accept', () => {
+    // 48 characters is the id budget; the persistence layer allows 64.
+    for (const name of ['홍길동', 'Ålex', '玩家一', 'x'.repeat(80), 'Bob Smith']) {
+      const id = sanitizePlayerId(name);
+      expect(id, name).toMatch(FILENAME_SAFE);
+      expect(id.length, name).toBeLessThanOrEqual(48);
+      expect(id.length, name).toBeGreaterThan(0);
+    }
+  });
+
+  it('is stable, so a player comes back to the same character', () => {
+    // Derived from the name alone with no clock and no randomness, or a character would be
+    // unreachable the next time its owner logged in.
+    for (const name of ['홍길동', 'Ålex', 'Alice']) {
+      expect(sanitizePlayerId(name)).toBe(sanitizePlayerId(name));
+    }
+    expect(sanitizePlayerId('홍길동')).toBe(sanitizePlayerId(' 홍길동 '));
+  });
+
+  it('leaves a plain ASCII name exactly as it was', () => {
+    // Deliberate: these are the ids already on disk, and appending a digest to them would
+    // strand every existing character. A name with a space or punctuation does get one -
+    // that is the cost of telling `Bob Smith` and `Bob_Smith` apart.
+    for (const name of ['Tester', 'alice', 'Bob', 'player_2', 'a-b']) {
+      expect(sanitizePlayerId(name)).toBe(name.toLowerCase());
+    }
   });
 });
 
@@ -82,7 +138,13 @@ describe('JoinGate', () => {
   });
 
   it('derives the player id from the name when none is given', () => {
-    expect(gate.validate(options({ name: 'Bob Smith' })).playerId).toBe('bob_smith');
+    // A space is not a safe filename character here, so the id keeps a digest of the name
+    // it could not spell - that is what stops `Bob Smith` and `Bob_Smith` being one person.
+    expect(gate.validate(options({ name: 'Bob Smith' })).playerId).toBe(
+      sanitizePlayerId('Bob Smith'),
+    );
+    expect(gate.validate(options({ name: 'Bob Smith' })).playerId).toMatch(/^bob_smith-/);
+    expect(gate.validate(options({ name: 'Alice' })).playerId).toBe('alice');
   });
 
   it('rejects a protocol mismatch with a message naming both versions', () => {

@@ -95,10 +95,14 @@ export class GameScene extends Phaser.Scene {
   create(sceneData: GameSceneData): void {
     this.gameData = this.registry.get('gameData') as GameData;
 
+    // No `playerId`: the server derives it from the name, and it is the only place that
+    // should. This used to send its own slug, computed here with a third copy of the
+    // server's rule that had lost the digest the server appends when cleaning is lossy -
+    // so every name not spelled in ASCII arrived pre-flattened and the server could no
+    // longer tell them apart. See `sanitizePlayerId`.
     this.session = new GameSession({
       url: sceneData.connection.url,
       name: sceneData.name,
-      playerId: sceneData.name.toLowerCase().replace(/[^a-z0-9_-]/g, '_') || 'survivor',
       ...(sceneData.password ? { password: sceneData.password } : {}),
       ...(sceneData.connection.token ? { token: sceneData.connection.token } : {}),
       data: this.gameData,
