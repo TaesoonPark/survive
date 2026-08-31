@@ -54,6 +54,14 @@ export const GATHER_REACH = 52;
 /** Reach for `interact` on a tile (water), in pixels from the tile centre. */
 export const INTERACT_REACH = 64;
 
+/**
+ * Half the diagonal of a tile: the furthest a tile's own edge can be from its centre.
+ *
+ * Sight tests back off by this much so the ray stops outside the target's tile no matter
+ * which way it approaches. Half the tile's *side* only clears the tile head-on.
+ */
+const HALF_TILE_DIAGONAL = (TILE_SIZE / 2) * Math.SQRT2;
+
 /** Ticks between two harvest actions from the same player. */
 export const GATHER_COOLDOWN_TICKS = 8;
 
@@ -435,12 +443,15 @@ export function harvestRange(def: ResourceNodeDef): number {
  * "blocked" - by the tree. Stopping the ray short asks the question that was actually
  * meant: is there a wall between us?
  *
- * The back-off is at least half a tile, not just the node's own radius, because it is
- * the tile that carries the collision bit. Backing off by the radius alone leaves the
- * ray's endpoint sitting inside the node's tile for anything slimmer than a boulder -
- * and a birch, at radius 12, lands its endpoint exactly on the tile boundary, where a
- * DDA traversal counts the far side. That reads as "you cannot see the tree you are
- * standing next to", which is indistinguishable from the tree being unharvestable.
+ * The back-off is at least half the tile's *diagonal*, not just the node's own radius,
+ * because it is the tile that carries the collision bit and the ray can arrive at any
+ * angle. Backing off by the radius alone leaves the endpoint inside the node's tile for
+ * anything slimmer than a boulder. Backing off by half the tile's side is enough only
+ * head-on: from a corner the tile edge is 16 * sqrt(2) away, so a ray stopped 17 short
+ * still ends inside the tile and the node blocks the sight of itself. That is why
+ * standing diagonally against a tree used to refuse every swing while standing squarely
+ * beside the same tree worked. Oak, pine and birch all sat inside the gap; a boulder, at
+ * radius 22, cleared its own corner by a hair and hid how general the fault was.
  */
 export function hasHarvestSight(
   ctx: SimContext,
@@ -451,7 +462,7 @@ export function hasHarvestSight(
   const dx = node.x - player.x;
   const dy = node.y - player.y;
   const d = Math.hypot(dx, dy);
-  const stop = d - (Math.max(def.radius, TILE_SIZE / 2) + 1);
+  const stop = d - (Math.max(def.radius, HALF_TILE_DIAGONAL) + 1);
   if (d <= 0 || stop <= 0) return true;
   return ctx.world.hasLineOfSight(
     player.x,

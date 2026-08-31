@@ -113,8 +113,16 @@ export class UiScene extends Phaser.Scene {
         this.togglePanel('chat');
         break;
       case 'pause':
-        // ESC closes the top panel if one is open; otherwise it opens the pause menu,
-        // which in single player also pauses the server (spec section 12).
+        // ESC drops a build selection first, then closes the top panel if one is open,
+        // and only otherwise opens the pause menu (spec section 12; in single player that
+        // also pauses the server).
+        //
+        // Build selection comes first because it is the one mode with no other way out. A
+        // campfire used from the inventory arms the ghost without opening the build panel,
+        // so `Clear` is not on screen; and the selection survives placing a piece on
+        // purpose, so a player who has run out of materials is left clicking at a red ghost
+        // and reading "not enough materials" with nothing to press.
+        if (this.clearBuildSelection()) break;
         if (this.openIds.size > 0) this.closeTopPanel();
         else this.togglePanel('pause');
         break;
@@ -152,6 +160,18 @@ export class UiScene extends Phaser.Scene {
     if (id === 'container') this.world.session.send({ type: 'closeContainer' });
     if (id === 'pause') this.world.session.send({ type: 'setPaused', paused: false });
     this.syncCapture();
+  }
+
+  /**
+   * Drop the build selection, if there is one. Reports whether there was.
+   *
+   * Rotation is cleared with it, so the next piece starts the right way up rather than
+   * inheriting a turn from something placed minutes ago.
+   */
+  private clearBuildSelection(): boolean {
+    if (this.world.session.self?.buildDefId === undefined) return false;
+    this.world.session.send({ type: 'setBuildSelection', defId: null, rotation: 0 });
+    return true;
   }
 
   private closeTopPanel(): void {

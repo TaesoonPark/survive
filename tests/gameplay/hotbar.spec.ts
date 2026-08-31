@@ -24,11 +24,15 @@ function emptyBagSlot(page: Page) {
  * while the cursor rests on the item - and an empty slot under the cursor clears the key.
  */
 test.describe('hotbar assignment', () => {
-  test('starts empty, which is what made this necessary', async ({ page }) => {
+  test('starts with only the kit spear bound, leaving the rest to the player', async ({ page }) => {
     await openClient(page);
     await joinServer(page);
     await waitForTicks(page, 20);
-    expect(await hotbar(page)).toEqual([null, null, null, null, null, null, null, null]);
+    // The starting kit binds the spear to the first key so a new character can draw it.
+    // Every other key is empty - which is the state that made these gestures necessary.
+    const bar = await hotbar(page);
+    expect(bar[0], 'the first key points at the spear from the kit').not.toBeNull();
+    expect(bar.slice(1)).toEqual([null, null, null, null, null, null, null]);
   });
 
   test('a number key over an item binds that slot, and an empty slot clears it', async ({
@@ -70,7 +74,8 @@ test.describe('hotbar assignment', () => {
     await waitForTicks(page, 8);
     const self = await page.evaluate(() => window.__survive!.self());
     expect(self!.activeHotbar, 'selecting is what a digit means over empty space').toBe(4);
-    expect(await hotbar(page)).toEqual([null, null, null, null, null, null, null, null]);
+    // Nothing was bound: the fifth key is still empty and the kit's spear is untouched.
+    expect((await hotbar(page)).slice(1)).toEqual([null, null, null, null, null, null, null]);
   });
 
   test('dragging an item onto the bar binds it without moving it', async ({ page }) => {

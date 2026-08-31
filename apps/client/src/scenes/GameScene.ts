@@ -51,7 +51,10 @@ const CULL_MARGIN = TILE_SIZE * 3;
  * Half a tile. Hunting for the exact pixel of a berry bush is not a game mechanic.
  */
 const MIN_HOVER_RADIUS = 14;
-import { GATHER_COOLDOWN_TICKS } from '@survive/simulation/systems/world/gathering';
+
+/** Arm's length for interactables that carry no reach of their own. */
+const DEFAULT_FOCUS_REACH = 56;
+import { GATHER_COOLDOWN_TICKS, harvestRange } from '@survive/simulation/systems/world/gathering';
 import { installDebugHook, removeDebugHook } from '../debugHook';
 import type { GameSceneData } from './connectionTypes';
 
@@ -80,6 +83,13 @@ export class GameScene extends Phaser.Scene {
   private aimLine!: Phaser.GameObjects.Graphics;
   private interactRing!: Phaser.GameObjects.Sprite;
   private buildGhost!: Phaser.GameObjects.Sprite;
+  /** What the ghost is aiming at this frame, or null when nothing is selected. */
+  private buildTarget: {
+    defId: string;
+    tileX: number;
+    tileY: number;
+    rotation: number;
+  } | null = null;
 
   private pendingRemovals: string[] = [];
   private chunkRequestCooldown = 0;
@@ -259,7 +269,20 @@ export class GameScene extends Phaser.Scene {
       intent.moveY = this.uiCaptured ? 0 : sample.moveY;
       intent.sprint = !this.uiCaptured && sample.sprint;
       intent.crouch = !this.uiCaptured && sample.crouch;
-      intent.primary = !this.uiCaptured && sample.primary;
+      // A click while a piece is selected places it instead of swinging, and holding the
+      // button does not swing either - attacking through your own blueprint is not a thing
+      // anyone means to do.
+      //
+      // A press, taken from the latch in `Controls`, rather than an edge derived from
+      // `sample.primary`. Not for correctness against a held button - the server's four-tick
+      // cooldown and the cost of the materials already stop that - but because a click whose
+      // down and up fall inside one frame never appears in a once-a-frame sample at all, and
+      // is lost. There is deliberately no test for the held-button half: the two guards above
+      // make the visible outcome identical either way, and a test that still passed with this
+      // line deleted would be claiming to check something it cannot see.
+      const primary = !this.uiCaptured && sample.primary;
+      if (!this.uiCaptured && this.controls.takePrimaryPress()) this.placeBuild();
+      intent.primary = primary && this.buildTarget === null;
       intent.secondary = !this.uiCaptured && sample.secondary;
       intent.block = !this.uiCaptured && sample.block;
       intent.aimAngle = sample.aimAngle;
@@ -389,12 +412,12 @@ export class GameScene extends Phaser.Scene {
       this.focusEntityId = null;
       return;
     }
-    const reach = 56;
     let best: RenderEntity | null = null;
-    let bestDistance = reach;
+    let bestDistance = Infinity;
     for (const entry of entities) {
       if (!this.isInteractable(entry.snapshot)) continue;
       const d = distance(self.x, self.y, entry.x, entry.y);
+      if (d > this.focusReach(entry.snapshot)) continue;
       if (d < bestDistance) {
         bestDistance = d;
         best = entry;
@@ -407,6 +430,22 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.interactRing.setVisible(false);
     }
+  }
+
+  /**
+   * How close the player has to be for the interact key to act on this thing.
+   *
+   * A node's reach is the server's own {@link harvestRange}, which grows with the node's
+   * radius: a flat 56 both promised swings at a boulder that the server then refused as
+   * out of range, and hid the prompt on trees the server would have allowed. Everything
+   * else keeps the flat arm's length, which is what the server checks for it.
+   */
+  private focusReach(snapshot: EntitySnapshot): number {
+    if (snapshot.k === 'node') {
+      const def = this.gameData.nodes.get(snapshot.defId);
+      if (def) return harvestRange(def);
+    }
+    return DEFAULT_FOCUS_REACH;
   }
 
   /**
@@ -573,6 +612,7 @@ export class GameScene extends Phaser.Scene {
   private updateBuildGhost(): void {
     const self = this.session.self;
     const defId = self?.buildDefId;
+    this.buildTarget = null;
     if (!self || !defId) {
       this.buildGhost.setVisible(false);
       return;
@@ -607,6 +647,39 @@ export class GameScene extends Phaser.Scene {
     this.buildGhost.setTexture(valid ? TextureKey.ghostValid : TextureKey.ghostInvalid);
     this.buildGhost.setPosition(tileX * TILE_SIZE, tileY * TILE_SIZE);
     this.buildGhost.setDisplaySize(width * TILE_SIZE, height * TILE_SIZE);
+
+    // Published for the click to use, so the piece lands on the square the player was
+    // looking at. Recomputing the tile from the pointer at click time would read a pointer
+    // that has moved since the frame was drawn, and place the piece a square away from the
+    // ghost - the one thing a preview must never do. Sent even when the local check says
+    // invalid: the server has the full picture and its refusal is the honest answer.
+    this.buildTarget = { defId, tileX, tileY, rotation: self.buildRotation };
+  }
+
+  /**
+   * Place the piece the ghost is showing.
+   *
+   * The tile comes from the ghost drawn on the last frame rather than from the pointer now.
+   * Those are the same square almost always and different exactly when the player is moving
+   * the mouse - which is when placing a piece a square away from the preview would be most
+   * infuriating and least explicable.
+   *
+   * Nothing is validated here beyond having something selected. The local check behind the
+   * ghost's colour is an approximation of a decision only the server can make, so refusing
+   * the send would mean the client inventing refusals of its own - and the player reading a
+   * red ghost as a bug rather than as an answer. Let the server answer; it already does, and
+   * the reason arrives in the speech bubble.
+   */
+  private placeBuild(): void {
+    const target = this.buildTarget;
+    if (!target) return;
+    this.session.send({
+      type: 'build',
+      defId: target.defId,
+      tileX: target.tileX,
+      tileY: target.tileY,
+      rotation: target.rotation,
+    });
   }
 
   /** Ask for terrain the client has not been sent yet. */

@@ -23,6 +23,8 @@ export interface SelfSnapshot {
   tileY: number;
   inventoryCount: number;
   heldDefId: string | null;
+  buildDefId: string | null;
+  buildRotation: number;
 }
 
 /** The address the Playwright web server config starts the game server on. */

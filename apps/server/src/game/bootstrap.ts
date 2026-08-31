@@ -81,7 +81,21 @@ export async function bootstrap(
   const data = createGameData();
   const world = createWorld(config.world);
 
-  const server = new GameServer({ config, data, world, repository, logger });
+  const server = new GameServer({
+    config,
+    data,
+    world,
+    repository,
+    logger,
+    // Deleting a world is the store's business, not the server's - the server only ever
+    // holds the one repository it was handed. Handing it the means to get another is what
+    // makes an in-process reset possible at all.
+    recreateWorld: async () => {
+      logger.warn('resetting world', { name: config.saveName });
+      await store.deleteWorld(config.saveName);
+      return store.createWorld(config.saveName, config.world.seed);
+    },
+  });
   await server.start();
 
   return { server, store, repository, logger, backend };

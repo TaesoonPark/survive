@@ -55,6 +55,15 @@ export interface GameServerOptions {
   systems?: System[];
   /** Wall-clock source, injected so tests can control save timestamps. */
   now?: () => number;
+  /**
+   * Throw the save away and hand back a fresh, empty repository for the same world.
+   *
+   * Supplied by `bootstrap`, because deleting a world is the *store's* business and this
+   * class only ever sees the one repository it was handed. A server built without it -
+   * every test fixture, for one - simply cannot be reset, which is the safe default for
+   * an operation whose whole job is to destroy data.
+   */
+  recreateWorld?: () => Promise<WorldRepository>;
 }
 
 export interface JoinResult {
@@ -81,8 +90,11 @@ export class GameServer {
   readonly config: SimulationConfig;
   readonly data: GameData;
   readonly world: WorldService;
-  readonly repository: WorldRepository;
   readonly log: Logger;
+
+  /** Swapped out wholesale by {@link resetWorld}, which is why it is not `readonly`. */
+  private repositoryRef: WorldRepository;
+  private readonly recreateWorld: (() => Promise<WorldRepository>) | undefined;
 
   private sim!: Simulation;
   private driver: FixedStepDriver | null = null;
@@ -106,7 +118,8 @@ export class GameServer {
     this.config = options.config;
     this.data = options.data;
     this.world = options.world;
-    this.repository = options.repository;
+    this.repositoryRef = options.repository;
+    this.recreateWorld = options.recreateWorld;
     this.log = options.logger ?? nullLogger;
     this.systems = options.systems;
     this.now = options.now ?? (() => Date.now());
@@ -114,6 +127,15 @@ export class GameServer {
 
   get simulation(): Simulation {
     return this.sim;
+  }
+
+  get repository(): WorldRepository {
+    return this.repositoryRef;
+  }
+
+  /** Whether this server was built with a way to destroy and rebuild its world. */
+  get canResetWorld(): boolean {
+    return this.recreateWorld !== undefined;
   }
 
   get isRunning(): boolean {
@@ -187,19 +209,52 @@ export class GameServer {
     await this.primeChunksAround(this.defaultSpawn().x, this.defaultSpawn().y);
   }
 
-  /** Save everything and close the repository. Safe to call twice. */
-  async stop(): Promise<void> {
+  /**
+   * Save everything and close the repository. Safe to call twice.
+   *
+   * `save: false` is for {@link resetWorld}, which is about to delete the very world a
+   * final save would write - and writing it first would race the delete for no purpose.
+   */
+  async stop(options: { save?: boolean } = {}): Promise<void> {
     if (!this.running) return;
     this.running = false;
     this.driver = null;
     try {
-      await this.saveAll();
-      await Promise.allSettled([...this.inFlightSaves]);
-      await this.repository.flush();
+      if (options.save !== false) {
+        await this.saveAll();
+        await Promise.allSettled([...this.inFlightSaves]);
+        await this.repository.flush();
+      }
     } finally {
       await this.repository.close();
     }
     this.log.info('server stopped', { tick: this.sim?.state.tick ?? 0 });
+  }
+
+  /**
+   * Throw the world away and start a new one, in this process.
+   *
+   * Everything goes: terrain, structures, dropped items and every saved character. What
+   * survives is the world's *name* and its seed, so the new map is the same ground the
+   * old one was generated from - a reset, not a reroll.
+   *
+   * The caller is responsible for getting the players off first. This does not touch the
+   * network, because the simulation does not know it has any: a client left connected
+   * across a reset would be holding entity ids that no longer refer to anything.
+   */
+  async resetWorld(): Promise<void> {
+    const recreate = this.recreateWorld;
+    if (!recreate) throw new Error('this server was not built with world reset');
+
+    // Not `saveAll`: the save is about to be deleted, and the in-flight writes would
+    // otherwise be racing the delete for a file nobody will read.
+    await this.stop({ save: false });
+    this.inFlightSaves.clear();
+    this.loadingChunks.clear();
+    this.stepDurations = [];
+    this.repositoryRef = await recreate();
+    await this.start();
+    this.log.warn('world reset', { name: this.config.saveName });
   }
 
   // -------------------------------------------------------------------------

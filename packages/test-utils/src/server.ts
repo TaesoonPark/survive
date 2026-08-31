@@ -84,6 +84,13 @@ export async function createHeadlessServer(
     world,
     repository,
     logger: options.logger ?? nullLogger,
+    // The real one, wired the way `bootstrap` wires it, so a test can exercise a reset
+    // instead of a stub of one. `canResetWorld` is false without this, and the admin
+    // route answers 501 - which a test would happily read as "the guard works".
+    recreateWorld: async () => {
+      await store.deleteWorld(worldName);
+      return store.createWorld(worldName, config.world.seed);
+    },
     ...(options.systems ? { systems: options.systems } : {}),
     ...(options.now ? { now: options.now } : {}),
   });

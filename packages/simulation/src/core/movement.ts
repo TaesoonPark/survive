@@ -81,6 +81,29 @@ export function intentFromFrame(frame: InputFrame): MovementIntent {
   };
 }
 
+/**
+ * Whether something is stopping this player from walking on `tick`.
+ *
+ * Shared with the client rather than transcribed there. Prediction has to agree with the
+ * server about this or it fights it: a stagger is three ticks and shows up as a twitch,
+ * but raising a frame holds a player for seconds, and a client predicting movement through
+ * all of it would be corrected on every single snapshot.
+ */
+export function movementLocked(player: { actionLockedUntilTick: number }, tick: number): boolean {
+  return player.actionLockedUntilTick > tick;
+}
+
+/**
+ * Strip the movement out of a frame while leaving everything else intact.
+ *
+ * Aim and buttons survive: being held in place stops you walking, not looking or swinging.
+ * Sprint needs no special handling - `stepPlayerMovement` only sprints when there is
+ * movement intent to sprint with.
+ */
+export function withoutMovement(frame: InputFrame): InputFrame {
+  return { ...frame, moveX: 0, moveY: 0 };
+}
+
 /** Which stance an intent implies, given whether sprinting is currently allowed. */
 export function resolveMoveMode(intent: MovementIntent, canSprint: boolean): MoveMode {
   if (intent.crouch) return 'crouch';

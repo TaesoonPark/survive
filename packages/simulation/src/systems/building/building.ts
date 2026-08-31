@@ -640,6 +640,13 @@ function updateBuilding(ctx: SimContext): void {
  * left alone stays a half-built wall. `craftSpeed` is the tuning knob - a server that
  * halves crafting time halves construction time with it, because they are the same
  * "how long does making things take" dial to the person setting it.
+ *
+ * The builder is held in place while they work. Raising a frame used to be something that
+ * happened *near* you rather than something you did: the progress bar filled while you
+ * walked off, which read as the world building itself. The lock is re-armed every tick
+ * rather than set for the whole job, so it lapses on its own the moment the frame is
+ * finished or the builder is out of range - there is no state to unwind and no way to be
+ * left frozen by a frame that was destroyed mid-build.
  */
 function advanceBlueprint(ctx: SimContext, structure: StructureState, def: StructureDef): void {
   const centre = structureCenter(structure, def);
@@ -653,8 +660,17 @@ function advanceBlueprint(ctx: SimContext, structure: StructureState, def: Struc
   markStructureDirty(ctx.state, structure);
 
   if (structure.progress >= 1) {
+    // Not locked on the tick it finishes: the work is done and the next step is the
+    // player's own again.
     completeStructure(ctx, structure, def, builder);
-  } else if (ctx.state.tick % SIM_HZ === 0) {
+    return;
+  }
+  // Two ticks, not one. The lock is compared against the tick it is read on, so a single
+  // tick of margin would leave the player free on every other step and produce a stutter
+  // rather than a stop.
+  builder.actionLockedUntilTick = Math.max(builder.actionLockedUntilTick, ctx.state.tick + 2);
+  bump(builder);
+  if (ctx.state.tick % SIM_HZ === 0) {
     emitNoise(ctx, centre.x, centre.y, NoiseRadius.Building, 0.5, builder.id);
   }
 }

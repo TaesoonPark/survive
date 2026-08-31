@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EQUIP_SLOTS, type PlayerState } from '@survive/protocol';
 import { createGameData } from '@survive/game-data';
 import { countItem } from './items';
 import { STARTING_KIT, createPlayerState } from './player';
@@ -46,16 +47,39 @@ describe('starting kit', () => {
   it('is delivered whole, and weighs less than the player can carry', () => {
     const player = freshPlayer();
     for (const entry of STARTING_KIT) {
-      // Counted across the inventory *and* the hands: `createPlayerState` moves the hatchet
-      // into mainHand on purpose, so a new player has something to swing immediately.
-      const carried =
-        countItem(player.inventory, entry.defId) +
-        (player.equipment.mainHand?.defId === entry.defId ? player.equipment.mainHand.count : 0);
-      expect(carried, entry.defId).toBeGreaterThanOrEqual(entry.count);
+      // Counted across the inventory *and* everything worn or held: the kit is delivered
+      // dressed, so the hatchet is in mainHand and the cloth is on the player's back.
+      expect(carried(player, entry.defId), entry.defId).toBeGreaterThanOrEqual(entry.count);
     }
     // Over the limit and the player starts encumbered, which reads as a broken game rather
     // than as a generous kit.
     expect(player.carryWeight).toBeLessThan(player.carryCapacity);
+  });
+
+  /** Everything the character has on them, stowed or worn. */
+  function carried(player: PlayerState, defId: string): number {
+    let total = countItem(player.inventory, defId);
+    for (const slot of EQUIP_SLOTS) {
+      const worn = player.equipment[slot];
+      if (worn?.defId === defId) total += worn.count;
+    }
+    return total;
+  }
+
+  it('dresses the character rather than handing them a pile', () => {
+    const player = freshPlayer();
+    // Armour left in the inventory protects nothing, and a player who has to find the
+    // equipment panel before the first zombie arrives will not find it in time.
+    expect(player.equipment.chest?.defId).toBe('cloth_shirt');
+    expect(player.equipment.legs?.defId).toBe('cloth_pants');
+    expect(player.equipment.mainHand?.defId).toBe('stone_hatchet');
+  });
+
+  it('puts the spear on a key, so it can actually be drawn', () => {
+    const player = freshPlayer();
+    const bound = player.hotbar[0];
+    expect(bound, 'the first hotbar key is bound').not.toBeNull();
+    expect(player.inventory.slots[bound!]?.defId).toBe('spear');
   });
 
   it('affords a tool the player does not already have', () => {

@@ -984,6 +984,9 @@ describe('balance sanity', () => {
     // against the real recipes; this only checks the data ships.
     for (const id of [
       'stone_hatchet',
+      'spear',
+      'cloth_shirt',
+      'cloth_pants',
       'cloth_rag',
       'berry',
       'water_bottle',
@@ -998,6 +1001,10 @@ describe('balance sanity', () => {
     const bottle = data.items.require('water_bottle');
     expect(bottle.liquid?.contentDefId).toBe('water_clean');
     expect(bottle.liquid?.capacity).toBeGreaterThan(0);
+    // The kit is worn, not carried: `outfitPlayer` reads the armour slot off the item, so
+    // a cloth piece without one would be handed over and then silently left in a bag.
+    expect(data.items.require('cloth_shirt').armor?.slot).toBe('chest');
+    expect(data.items.require('cloth_pants').armor?.slot).toBe('legs');
   });
 
   it('lets every arrow and bolt be recovered, and no bullet', () => {

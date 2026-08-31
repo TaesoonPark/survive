@@ -2,7 +2,7 @@ import { clampToWorld, distance, type CommandOf, type PlayerState } from '@survi
 import type { SimContext } from '../../core/context';
 import { recomputeCarryWeight } from '../../core/items';
 import { PLAYER_RADIUS } from '../../core/movement';
-import { resetPlayerForRespawn } from '../../core/player';
+import { outfitPlayer, resetPlayerForRespawn } from '../../core/player';
 import { bump } from '../../core/queries';
 import { notify, reject } from './attrition';
 import { bedCenter, isUsableBed } from './sleep';
@@ -106,6 +106,12 @@ export function handleRespawn(
 
   const spot = standableNear(ctx, target.x, target.y, label);
   resetPlayerForRespawn(player, spot.x, spot.y, ctx.state.tick);
+  // Come back dressed. A respawn used to hand back a naked, empty-handed character
+  // standing wherever they died, which is the one situation the game gives no way out of:
+  // the first tool needs materials, the materials need a tool, and the thing that killed
+  // you is still there. `onlyMissing` keeps a death that spared the inventory from paying
+  // out a second kit.
+  outfitPlayer(ctx.data, player, { onlyMissing: true });
   // `killPlayer` zeroed the carried weight when it spilled the inventory; a loaded
   // save or a `dropInventory: false` death did not, so recompute rather than assume.
   recomputeCarryWeight(player, ctx.data);

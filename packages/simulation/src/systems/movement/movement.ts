@@ -7,7 +7,12 @@ import {
   type PlayerState,
 } from '@survive/protocol';
 import { SystemOrder, type CommandRouter, type SimContext, type System } from '../../core/context';
-import { PLAYER_RADIUS, stepPlayerMovement } from '../../core/movement';
+import {
+  PLAYER_RADIUS,
+  movementLocked,
+  stepPlayerMovement,
+  withoutMovement,
+} from '../../core/movement';
 import { NoiseRadius, emitNoise } from '../../core/noise';
 import { bump } from '../../core/queries';
 
@@ -97,17 +102,6 @@ function idleFrame(player: PlayerState): InputFrame {
   return { seq: player.lastInputSeq, moveX: 0, moveY: 0, aimAngle: player.aimAngle, buttons: 0 };
 }
 
-/**
- * Strip the movement out of a frame while leaving everything else intact.
- *
- * Used while a player is staggered. Aim and buttons survive, because being staggered
- * stops you walking, not looking; only the walk intent is dropped. Sprint needs no
- * special handling - `stepPlayerMovement` only sprints when there is movement intent.
- */
-function withoutMovement(frame: InputFrame): InputFrame {
-  return { ...frame, moveX: 0, moveY: 0 };
-}
-
 export function createMovementSystem(): System {
   return {
     id: 'movement',
@@ -161,8 +155,10 @@ export function createMovementSystem(): System {
 function stepPlayer(ctx: SimContext, player: PlayerState, dt: number): void {
   const published = ctx.inputs.get(player.id);
   const frame = published ?? idleFrame(player);
-  const staggered = player.actionLockedUntilTick > ctx.state.tick;
-  const intended = staggered ? withoutMovement(frame) : frame;
+  // Staggered by a hit, or holding still to raise a frame. Same lock either way, and the
+  // client predicts it from the same two functions.
+  const locked = movementLocked(player, ctx.state.tick);
+  const intended = locked ? withoutMovement(frame) : frame;
 
   const startX = player.x;
   const startY = player.y;
@@ -202,7 +198,7 @@ function stepPlayer(ctx: SimContext, player: PlayerState, dt: number): void {
     // what the step asked for.
     const before = player.stats.distanceTravelled;
     player.stats.distanceTravelled = before + moved;
-    if (!staggered) emitFootsteps(ctx, player, before, player.stats.distanceTravelled);
+    if (!locked) emitFootsteps(ctx, player, before, player.stats.distanceTravelled);
   }
 
   const changed =

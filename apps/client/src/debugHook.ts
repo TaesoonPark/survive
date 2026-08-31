@@ -41,6 +41,15 @@ export interface SurviveDebugHook {
      */
     hotbar: (number | null)[];
     activeHotbar: number;
+    /**
+     * The piece selected for building, or null.
+     *
+     * This is server state - the panel sends a command and the ghost is drawn from what
+     * comes back - so it is the only way a test can tell "the click was registered" from
+     * "the selection round-tripped and the ghost is really there to be placed".
+     */
+    buildDefId: string | null;
+    buildRotation: number;
   } | null;
   /** The locally predicted position: the latest fixed-step rung. */
   predicted(): { x: number; y: number };
@@ -158,6 +167,8 @@ export function installDebugHook(
         tileY: Math.floor(self.y / 32),
         hotbar: [...self.hotbar],
         activeHotbar: self.activeHotbar,
+        buildDefId: self.buildDefId ?? null,
+        buildRotation: self.buildRotation,
         inventoryCount: self.inventory.slots.filter((slot) => slot !== null).length,
         heldDefId: self.equipment.mainHand?.defId ?? null,
       };

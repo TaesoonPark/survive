@@ -80,6 +80,9 @@ export class MenuScene extends Phaser.Scene {
             <input id="mp-password" type="password" placeholder="${t('menu.passwordPlaceholder')}"
                    aria-label="${t('menu.serverPassword')}" />
           </div>
+          <div class="menu-row">
+            <button id="mp-reset" class="danger">${t('menu.reset')}</button>
+          </div>
         </section>
 
         <p id="menu-status" class="menu-status" role="status"></p>
@@ -129,6 +132,12 @@ export class MenuScene extends Phaser.Scene {
         background: ${cssColor(UI.accent)}; border-color: ${cssColor(UI.accent)};
         color: #0d1a0f;
       }
+      /* Quiet until it is armed: a destructive button that shouts before it has been
+         asked twice is just noise beside the button people actually came here to press. */
+      .menu button.danger { color: ${cssColor(UI.danger)}; }
+      .menu button.danger.armed {
+        background: ${cssColor(UI.danger)}; border-color: ${cssColor(UI.danger)}; color: #1a0d0d;
+      }
       .menu button:disabled { opacity: 0.5; cursor: default; }
       .menu-note { margin: 0; font-size: 12px; color: ${cssColor(UI.textMuted)}; line-height: 1.6; }
       .menu-note code {
@@ -177,6 +186,15 @@ export class MenuScene extends Phaser.Scene {
       this.launch({ url, room: 'survive', token: '', world: '', port: 0 }, name, password);
     });
 
+    this.root.querySelector('#mp-reset')?.addEventListener('click', () => {
+      void this.resetWorld();
+    });
+    // Touching anything else takes the reset off its hair trigger, so an armed button
+    // cannot sit there waiting for an unrelated click a minute later.
+    this.root.addEventListener('pointerdown', (event) => {
+      if ((event.target as HTMLElement | null)?.id !== 'mp-reset') this.disarmReset();
+    });
+
     // Enter in any field is "go".
     this.root.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
@@ -185,6 +203,73 @@ export class MenuScene extends Phaser.Scene {
         this.root.querySelector<HTMLButtonElement>('#sp-start')?.click();
       else this.root.querySelector<HTMLButtonElement>('#mp-join')?.click();
     });
+  }
+
+  /**
+   * Delete the world on the server in the address field, in two clicks.
+   *
+   * Two clicks rather than a modal because this menu is plain DOM with no dialog of its
+   * own, and rather than a typed confirmation because the thing being destroyed is a save
+   * the player can recreate in one click - the cost of a mistake is an evening, not a
+   * career. The first click says what will happen and the second does it; anything else on
+   * the screen disarms it, so a stray double-click on the wrong button cannot wipe a world.
+   *
+   * The server decides whether this is allowed at all: only a request from the machine
+   * running it is accepted. The refusal is reported as what it is rather than as a generic
+   * failure, because "do it from the other computer" is an instruction the player can act
+   * on and "something went wrong" is not.
+   */
+  private async resetWorld(): Promise<void> {
+    const button = this.root.querySelector<HTMLButtonElement>('#mp-reset');
+    const url = this.root.querySelector<HTMLInputElement>('#mp-url')?.value.trim() ?? '';
+    if (!button) return;
+    if (!url) {
+      this.status(t('menu.needAddress'), 'error');
+      return;
+    }
+
+    if (!button.classList.contains('armed')) {
+      button.classList.add('armed');
+      this.status(t('menu.resetArmed'), 'error');
+      return;
+    }
+
+    button.classList.remove('armed');
+    button.disabled = true;
+    this.status(t('menu.resetBusy'));
+    try {
+      const response = await fetch(new URL('/admin/reset', url), {
+        method: 'POST',
+        // Not a secret - the server ignores the value. Setting a header at all is what
+        // makes this a request a page on the internet cannot forge: it forces a CORS
+        // preflight, and the server answers that only for a page served from this machine.
+        headers: { 'x-survive-admin': 'reset' },
+      });
+      if (response.ok) this.status(t('menu.resetDone'));
+      // 404 as well as 501: a server too old to carry this route has no reset either, and
+      // "this server does not allow it" is the true and useful thing to say about both.
+      else if (response.status === 501 || response.status === 404) {
+        this.status(t('menu.resetUnsupported'), 'error');
+      } else if (response.status === 403) {
+        this.status(t('menu.resetNotLocal'), 'error');
+      } else this.status(t('menu.resetFailed'), 'error');
+    } catch {
+      // A bad address, a server that is not running, or a browser that refused the
+      // cross-origin request - none of which the player can tell apart, and all of which
+      // mean the same thing to them.
+      this.status(t('menu.resetUnreachable'), 'error');
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  /** Take the reset button off its hair trigger. */
+  private disarmReset(): void {
+    const button = this.root.querySelector<HTMLButtonElement>('#mp-reset');
+    if (button?.classList.contains('armed')) {
+      button.classList.remove('armed');
+      this.status('');
+    }
   }
 
   private async refreshWorlds(bridge: NonNullable<Window['survive']>): Promise<void> {

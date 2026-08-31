@@ -183,6 +183,49 @@ describe('build', () => {
     expect(structure?.progress).toBe(1);
   });
 
+  it('holds the builder in place while the frame goes up, and lets go when it is done', () => {
+    const fx = fixture();
+    const { sim, player, tx, ty } = fx;
+    const def = sim.data.structures.require('wall_wood_frame');
+    stock(sim, player, def.id);
+    // Free before: this is a lock the building puts on, not one the fixture arrived with.
+    expect(player.actionLockedUntilTick).toBeLessThanOrEqual(sim.ctx.state.tick);
+
+    sim.run(player, { type: 'build', defId: def.id, tileX: tx + 2, tileY: ty, rotation: 0 });
+    const structure = structuresAt(sim, tx + 2, ty);
+    expect(structure?.progress).toBeGreaterThan(0);
+    expect(structure?.progress).toBeLessThan(1);
+
+    // Held while the work is going on. Raising a frame used to be something that happened
+    // *near* you - the bar filled while you walked off, which read as the world building
+    // itself.
+    expect(player.actionLockedUntilTick).toBeGreaterThan(sim.ctx.state.tick);
+    // And held on the next tick too: a one-tick margin would free the player on every
+    // other step, which is a stutter rather than a stop.
+    sim.step(1);
+    expect(player.actionLockedUntilTick).toBeGreaterThan(sim.ctx.state.tick);
+
+    sim.step(def.buildTicks);
+    expect(structure?.progress).toBe(1);
+    // Let go once it is finished - and within the two ticks the lock is armed for, so a
+    // player is never left standing still by a frame that is no longer being built.
+    sim.step(2);
+    expect(player.actionLockedUntilTick).toBeLessThanOrEqual(sim.ctx.state.tick);
+  });
+
+  it('does not hold a player standing away from the site', () => {
+    const fx = fixture();
+    const { sim, player, tx, ty } = fx;
+    const def = sim.data.structures.require('wall_wood_frame');
+    stock(sim, player, def.id);
+    sim.run(player, { type: 'build', defId: def.id, tileX: tx + 2, tileY: ty, rotation: 0 });
+
+    // Out of range: the frame stops advancing, so nothing is holding anyone.
+    player.x += TILE_SIZE * 40;
+    sim.step(3);
+    expect(player.actionLockedUntilTick).toBeLessThanOrEqual(sim.ctx.state.tick);
+  });
+
   it('scales construction speed with the craftSpeed tuning knob', () => {
     const build = (craftSpeed: number): number => {
       const fx = fixture({

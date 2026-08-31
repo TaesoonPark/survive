@@ -31,8 +31,10 @@ import {
   conditionSpeedMultiplier,
   stepMovement,
   intentFromFrame,
+  movementLocked,
   resolveMoveMode,
   baseSpeedFor,
+  withoutMovement,
 } from '@survive/simulation/core/movement';
 import { circleOverlapsSolid, sweepCircle } from '@survive/world/collision';
 
@@ -442,7 +444,14 @@ export class GameSession {
   ): void {
     const self = this.store.self;
     if (!self) return;
-    const intent = intentFromFrame(frame);
+    // The server drops the walk intent while the player is held in place, so prediction has
+    // to as well. Raising a frame holds them for seconds; predicting movement through that
+    // would put the sprite metres from where the server has them and hand it back on every
+    // snapshot. Read against the last authoritative tick rather than the predicted one -
+    // the lock is re-armed every tick it applies, so it is never stale by more than the
+    // one tick prediction runs ahead.
+    const locked = movementLocked(self, this.store.tick);
+    const intent = intentFromFrame(locked ? withoutMovement(frame) : frame);
     const moving = Math.abs(intent.moveX) > 0.01 || Math.abs(intent.moveY) > 0.01;
     const mode = resolveMoveMode(intent, self.stamina > 6 && moving);
     const speed = baseSpeedFor(mode) * conditionSpeedMultiplier(self, this.data);

@@ -470,6 +470,64 @@ describe('gather rejections', () => {
     expect(node.health).toBeLessThan(node.maxHealth);
   });
 
+  /**
+   * Standing on the corner of a tree used to refuse every swing.
+   *
+   * A node registers its own tile as opaque, so the sight test stops the ray short of it.
+   * The back-off used to be half a tile's *side*, which only clears the tile head-on: from
+   * a corner the tile edge is half a *diagonal* away, so the ray ended inside the tree and
+   * the tree blocked the sight of itself. Distance was never the problem - the assertion
+   * below pins that down, so a future failure here cannot be misread as a reach change.
+   *
+   * Oak at 16, pine at 14 and birch at 12 all sat inside the gap, against a half-diagonal
+   * of 22.63. The boulder at 22 and the car wreck at 26 cleared their own corner already;
+   * they are here as guards, not as regressions.
+   */
+  for (const [defId, tool] of [
+    ['tree_pine', 'stone_hatchet'],
+    ['tree_oak', 'stone_hatchet'],
+    ['tree_birch', 'stone_hatchet'],
+    ['rock_boulder', 'iron_pickaxe'],
+  ] as const) {
+    it(`harvests ${defId} while standing diagonally against it`, () => {
+      const fix = fixture();
+      fix.sim.equip(fix.player, tool);
+      const node = fix.sim.placeNode(defId, fix.tileX + 1, fix.tileY + 1);
+      if (!node) throw new Error(`placeNode failed for ${defId}`);
+
+      // The premise: the corner is comfortably inside reach, so anything that refuses
+      // this swing is refusing it on sight, not on distance.
+      const def = fix.sim.data.nodes.require(defId);
+      const gap = Math.hypot(node.x - fix.player.x, node.y - fix.player.y);
+      expect(gap).toBeLessThan(harvestRange(def));
+
+      swing(fix, node);
+      expect(fix.sim.lastEvent('commandRejected')).toBeUndefined();
+      expect(node.health).toBeLessThan(node.maxHealth);
+    });
+  }
+
+  it('still refuses a node off the diagonal with a wall between', () => {
+    const fix = fixture();
+    fix.sim.equip(fix.player, 'stone_hatchet');
+    // Two tiles east and one south - 71.6 px, inside a pine's 77 - screened by a wall in
+    // the column between. Backing the ray off further must not cost it the ability to see
+    // a wall that is genuinely in the way, and this angle is not axis-aligned, which is
+    // where the old back-off was measured.
+    fix.sim.wall(fix.tileX + 1, fix.tileY, fix.tileX + 1, fix.tileY + 1);
+    const node = fix.sim.placeNode('tree_pine', fix.tileX + 2, fix.tileY + 1);
+    if (!node) throw new Error('placeNode failed');
+
+    const def = fix.sim.data.nodes.require('tree_pine');
+    expect(Math.hypot(node.x - fix.player.x, node.y - fix.player.y)).toBeLessThan(
+      harvestRange(def),
+    );
+
+    swing(fix, node);
+    expect(node.health).toBe(node.maxHealth);
+    expect(fix.sim.lastEvent('commandRejected')?.reason).toBe('noLineOfSight');
+  });
+
   it('refuses a second swing inside the cooldown', () => {
     const fix = fixture();
     const node = nodeBeside(fix, 'tree_oak');

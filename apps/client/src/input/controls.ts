@@ -119,6 +119,15 @@ export class Controls {
   private readonly actions: UiAction[] = [];
   private pointerPrimary = false;
   private pointerSecondary = false;
+  /**
+   * A left press that has happened but not yet been read.
+   *
+   * Latched here rather than derived from {@link sample}'s `primary`, because a press is an
+   * event and `primary` is a state read once a frame. A click whose down and up land inside
+   * one frame - which is every synthetic click, and a fast real one on a slow frame - sets
+   * the state true and false again before anything looks at it, and is simply lost.
+   */
+  private primaryPressed = false;
   private pointerScreenX = 0;
   private pointerScreenY = 0;
   private bindings: ControlBindings;
@@ -176,6 +185,7 @@ export class Controls {
       this.pressed.clear();
       this.pointerPrimary = false;
       this.pointerSecondary = false;
+      this.primaryPressed = false;
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -231,7 +241,10 @@ export class Controls {
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     this.pointerScreenX = pointer.x;
     this.pointerScreenY = pointer.y;
-    if (pointer.leftButtonDown()) this.pointerPrimary = true;
+    if (pointer.leftButtonDown()) {
+      this.pointerPrimary = true;
+      this.primaryPressed = true;
+    }
     if (pointer.rightButtonDown()) this.pointerSecondary = true;
   }
 
@@ -290,6 +303,18 @@ export class Controls {
     };
   }
 
+  /**
+   * Whether the left button was pressed since this was last asked. Clears the latch.
+   *
+   * For things a click *does once* - placing a building - as opposed to what a held button
+   * means, which is {@link IntentSample.primary}.
+   */
+  takePrimaryPress(): boolean {
+    const pressed = this.primaryPressed;
+    this.primaryPressed = false;
+    return pressed;
+  }
+
   /** Take the queued one-shot actions. */
   drainActions(): UiAction[] {
     if (this.actions.length === 0) return [];
@@ -300,6 +325,8 @@ export class Controls {
   consumePointer(): void {
     this.pointerPrimary = false;
     this.pointerSecondary = false;
+    // The latch too, or a click that landed on a panel places a building on the next frame.
+    this.primaryPressed = false;
   }
 
   destroy(): void {
@@ -307,5 +334,6 @@ export class Controls {
     this.detach.length = 0;
     this.pressed.clear();
     this.actions.length = 0;
+    this.primaryPressed = false;
   }
 }

@@ -8,6 +8,8 @@ import {
 } from '@survive/protocol';
 import { createTestSimulation, type TestSimulation } from '@survive/test-utils';
 import { RESPAWN_DELAY_TICKS, killPlayer } from '../../core/death';
+import { countItem } from '../../core/items';
+import { outfitPlayer } from '../../core/player';
 import { removeStructure } from '../../core/structures';
 import { createCraftingSystem } from '../crafting/crafting';
 import { createSurvivalSystem } from './survivalSystem';
@@ -449,6 +451,41 @@ describe('respawn', () => {
     expect(player.effects).toHaveLength(0);
     expect(player.deathCause).toBeUndefined();
     expect(player.respawnAtTick).toBe(-1);
+  });
+
+  it('sends the player back with a kit rather than naked and empty-handed', () => {
+    const scene = bunk();
+    const { player } = scene;
+    // Death spills the inventory, which is the case that leaves a character with no way
+    // back: the first tool needs materials and the materials need a tool.
+    killPlayer(scene.harness.ctx, player, 'test');
+    expect(player.equipment.mainHand).toBeNull();
+    expect(player.inventory.slots.every((slot) => slot === null)).toBe(true);
+
+    scene.harness.step(RESPAWN_DELAY_TICKS + 1);
+    scene.harness.run(player, { type: 'respawn', atBed: false });
+
+    expect(player.equipment.mainHand?.defId).toBe('stone_hatchet');
+    expect(player.equipment.chest?.defId).toBe('cloth_shirt');
+    expect(player.equipment.legs?.defId).toBe('cloth_pants');
+    expect(countItem(player.inventory, 'spear')).toBe(1);
+    expect(player.carryWeight).toBeLessThan(player.carryCapacity);
+  });
+
+  it('does not pay out a second kit to a death that kept the gear', () => {
+    const scene = bunk();
+    const { player } = scene;
+    // A death that spares the inventory would otherwise mint a free kit per death, which
+    // is a materials fountain for anyone willing to walk into a zombie for it.
+    outfitPlayer(scene.harness.ctx.data, player);
+    killPlayer(scene.harness.ctx, player, 'test', undefined, false);
+    const before = countItem(player.inventory, 'stick');
+    expect(before).toBeGreaterThan(0);
+
+    scene.harness.step(RESPAWN_DELAY_TICKS + 1);
+    scene.harness.run(player, { type: 'respawn', atBed: false });
+
+    expect(countItem(player.inventory, 'stick')).toBe(before);
   });
 
   it('puts the player back at their bed when they ask for it', () => {
